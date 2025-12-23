@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Switch,
 } from 'react-native';
 import { requestBlePermission } from '../../util/ble';
-import { GetHookProps } from './controller';
+import { formatRTC, GetHookProps } from './controller';
 import { Read, Write } from './handleButton';
 import { Radio } from '../../component/radio';
 
@@ -32,7 +32,37 @@ export default function Overview() {
   const { state, setState } = hookProps;
 
   /* ================= FIELD LIST ================= */
+  const rtcTimer = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+  if (state.chkRTC && state.chkRTCNow) {
+    rtcTimer.current = setInterval(() => {
+      const now = new Date();
+      setState(p => ({
+        ...p,
+        inputRTC: formatRTC(now),
+      }));
+    }, 1000);
+  }
+
+  return () => {
+    if (rtcTimer.current) {
+      clearInterval(rtcTimer.current);
+      rtcTimer.current = null;
+    }
+  };
+}, [state.chkRTC, state.chkRTCNow]);
+
+  /* ================= AUTO TOTAL ================= */
+
+  useEffect(() => {
+    const imp = Number(state.inputImpData || 0);
+    const exp = Number(state.inputExpData || 0);
+    setState(p => ({
+      ...p,
+      inputTotalData: (imp - exp).toString(),
+    }));
+  }, [state.inputImpData, state.inputExpData]);
   const fieldList: FieldUI[] = useMemo(
     () => [
       { label: 'Serial Module', chkKey: 'chkModuleNo', inputKey: 'inputModuleNo' },
@@ -40,17 +70,13 @@ export default function Overview() {
       { label: 'Thời gian RTC', chkKey: 'chkRTC', inputKey: 'inputRTC' },
       { label: 'Phiên bản Firmware', chkKey: 'chkFirmwareVer', inputKey: 'inputFirmwareVer' },
       { label: 'Phiên bản Boot', chkKey: 'chkBootVer', inputKey: 'inputBootVer' },
-      { label: 'Chỉ số xuôi (L)', chkKey: 'chkImpData', inputKey: 'inputImpData' },
-      { label: 'Chỉ số ngược (L)', chkKey: 'chkExpData', inputKey: 'inputExpData' },
+      { label: 'Đọc chỉ số', chkKey: 'chkImpData', inputKey: 'inputImpData' },
       { label: 'Địa chỉ IP', chkKey: 'chkIPPORT', inputKey: 'inputIPPORT' },
       { label: 'Chu kỳ lưu (phút)', chkKey: 'chkLatchPeriod', inputKey: 'inputLatchPeriod' },
       { label: 'Chu kỳ gửi (phút)', chkKey: 'chkPushPeriod', inputKey: 'inputPushPeriod' },
-
-      // ===== RADIO =====
       { label: 'Phương thức gửi', chkKey: 'chkPushMethod', inputKey: 'inputPushMethod' },
       { label: 'Trạng thái kích hoạt thiết bị', chkKey: 'chkEnableDevice', inputKey: 'inputEnableDevice' },
       { label: 'Phương thức gửi sự kiện', chkKey: 'chkPushEventMethod', inputKey: 'inputPushEventMethod' },
-
       { label: 'Lưu lượng Q3', chkKey: 'chkQ3', inputKey: 'inputQ3' },
       { label: 'Số lít mỗi vòng', chkKey: 'chkLPR', inputKey: 'inputLPR' },
       { label: 'Loại Module', chkKey: 'chkModuleType', inputKey: 'inputModuleType' },
@@ -154,24 +180,88 @@ export default function Overview() {
         
             <Radio
               label="Gửi theo chu kỳ"
-              checked={state.inputPushEventMethod === '1'}
+              checked={state.inputPushEventMethod == '1'}
               disabled={!enabled}
               onPress={() => updateValue(item.inputKey, '1')}
             />
             <Radio
               label="Gửi tức thời"
-              checked={state.inputPushEventMethod === '2'}
+              checked={state.inputPushEventMethod == '2'}
               disabled={!enabled}
               onPress={() => updateValue(item.inputKey, '2')}
             />
           </View>
         )}
+        {item.inputKey === 'inputRTC' && (
+          <>
+            <TextInput
+              value={state.inputRTC}
+              editable={enabled && !state.chkRTCNow}
+              style={[styles.input, !enabled && styles.inputDisable]}
+            />
+            <View style={styles.inlineRow}>
+              <Switch
+                value={state.chkRTCNow}
+                disabled={!enabled}
+                onValueChange={v => setState(p => ({ ...p, chkRTCNow: v }))}
+              />
+              <Text style={styles.inlineLabel}>Lấy thời gian hiện tại</Text>
+            </View>
+          </>
+        )}
+
+        {item.inputKey === 'inputImpData' && (
+      <>
+        {/* Chỉ số xuôi */}
+        <Text style={styles.label}>Chỉ số xuôi</Text>
+        <TextInput
+          value={state.inputImpData}
+          editable={enabled && state.chkImpData}
+          style={[
+            styles.input,
+            (!enabled || !state.chkImpData) && styles.inputDisable,
+          ]}
+          keyboardType="numeric"
+          onChangeText={v =>
+            setState(p => ({ ...p, inputImpData: v }))
+          }
+        />
+
+        {/* Chỉ số ngược */}
+        <Text style={styles.label}>Chỉ số ngược</Text>
+        <TextInput
+          value={state.inputExpData}
+          editable={enabled && state.chkImpData}
+          style={[
+            styles.input,
+            (!enabled || !state.chkImpData) && styles.inputDisable,
+          ]}
+          keyboardType="numeric"
+          onChangeText={v =>
+            setState(p => ({ ...p, inputExpData: v }))
+          }
+        />
+
+
+        {/* Tổng CS */}
+        <Text style={styles.label}>Tổng CS = Xuôi − Ngược</Text>
+        <TextInput
+          value={state.inputTotalData}
+          editable={false}
+          style={[styles.input, styles.totalInput]}
+        />
+      </>
+    )}
+
+
 
         {/* ===== INPUT ===== */}
         {![
           'inputEnableDevice',
           'inputPushMethod',
           'inputPushEventMethod',
+          'inputRTC',          
+          'inputImpData',      
         ].includes(item.inputKey as string) && (
           <TextInput
             value={String(state[item.inputKey] ?? '')}
@@ -317,5 +407,12 @@ commandLabel: {
   marginLeft: 8,
   fontSize: 13,
 },
+ inlineRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  inlineLabel: { fontSize: 11, marginLeft: 6 },
 
+  totalInput: {
+    backgroundColor: '#f2f2f2', // nhìn là biết auto
+    color: '#666',
+    fontWeight: '600',
+  },
 });

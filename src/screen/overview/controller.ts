@@ -75,6 +75,8 @@ export type HookState = {
   chkClearData: boolean;
   chkPushData:boolean;
   chkResetModule:boolean;
+  chkRTCNow: boolean;
+  inputTotalData : string;
 };
 
 export type HookProps = {
@@ -89,6 +91,8 @@ export const GetHookProps = (): HookProps => {
 
   const [state, setState] = useState<HookState>({
     // Các trường cũ
+    inputTotalData :'',
+    chkRTCNow: false,
     chkModuleNo: false,
     inputModuleNo: '',
     chkMeterNo: false,
@@ -168,3 +172,14 @@ export const GetHookProps = (): HookProps => {
 
   return hookProps;
 };
+export function formatRTC(date: Date) {
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+
+  const dd = String(date.getDate()).padStart(2, '0');
+  const MM = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+
+  return `${hh}:${mm}:${ss}, ${dd}/${MM}/${yyyy}`;
+}

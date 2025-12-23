@@ -442,66 +442,66 @@ export const Read = async (): Promise<void> => {
       setState(prev => ({ ...prev, inputBootVer: bootVer }));
     }
 
-    // Imp Data
     if (state.chkImpData) {
-      setState(prev => ({ ...prev, inputImpData: '' }));
+      // reset
+      setState(prev => ({
+        ...prev,
+        inputImpData: '',
+        inputExpData: '',
+        inputTotalData: '',
+      }));
 
-      const payload = buildOptReadPayload([2]);
-      const frame = buildEwmFrame(6, payload);
+      /* ======================
+        ĐỌC IMP DATA (ID = 2)
+        ====================== */
+      const payloadImp = buildOptReadPayload([2]);
+      const frameImp = buildEwmFrame(6, payloadImp);
 
-      console.log('Send:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('Recv:', bytesToHex(receivedData || []));
+      console.log('Send IMP:', bytesToHex(frameImp));
+      const recvImp = await sendAndReceiveQueued(connectedId, frameImp);
 
-      if (!receivedData || receivedData.length === 0) {
-        console.log('[Lỗi] Không nhận được phản hồi từ thiết bị');
+      if (!recvImp || recvImp.length === 0) {
+        console.log('[Lỗi] Không nhận được IMP');
         return;
       }
 
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log('Payload:', bytesToHex(decryptedPayload));
+      const impPayload = parseDecryptedPayload(new Uint8Array(recvImp));
+      const impData = readUInt32LE(impPayload, 0);
 
-      if (decryptedPayload.length >= 4) {
-        // ✅ GIỐNG C# BitConverter.ToUInt32
-        const impData = readUInt32LE(decryptedPayload, 0);
-        console.log('ImpData:', impData);
+      console.log('ImpData:', impData);
 
-        setState(prev => ({
-          ...prev,
-          inputImpData: impData.toString(),
-        }));
-      }
-    }
-    // Exp Data
-    if (state.chkExpData) {
-      setState(prev => ({ ...prev, inputExpData: '' }));
+      /* ======================
+        ĐỌC EXP DATA (ID = 3)
+        ====================== */
+      const payloadExp = buildOptReadPayload([3]);
+      const frameExp = buildEwmFrame(6, payloadExp);
 
-      const payload = buildOptReadPayload([3]);
-      const frame = buildEwmFrame(6, payload);
+      console.log('Send EXP:', bytesToHex(frameExp));
+      const recvExp = await sendAndReceiveQueued(connectedId, frameExp);
 
-      console.log('Send:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('Recv:', bytesToHex(receivedData || []));
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log('[Lỗi] Không nhận được phản hồi từ thiết bị');
+      if (!recvExp || recvExp.length === 0) {
+        console.log('[Lỗi] Không nhận được EXP');
         return;
       }
 
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log('Payload:', bytesToHex(decryptedPayload));
+      const expPayload = parseDecryptedPayload(new Uint8Array(recvExp));
+      const expData = readUInt32LE(expPayload, 0);
 
-      if (decryptedPayload.length >= 4) {
-        // ✅ GIỐNG C# BitConverter.ToUInt32
-        const expData = readUInt32LE(decryptedPayload, 0);
-        console.log('ExpData:', expData);
+      console.log('ExpData:', expData);
 
-        setState(prev => ({
-          ...prev,
-          inputExpData: expData.toString(),
-        }));
-      }
+      /* ======================
+        TÍNH TỔNG (KHÔNG GỬI TBI)
+        ====================== */
+      const totalData = impData - expData;
+
+      setState(prev => ({
+        ...prev,
+        inputImpData: impData.toString(),
+        inputExpData: expData.toString(),
+        inputTotalData: totalData.toString(),
+      }));
     }
+
 
 
     // IPPORT
@@ -628,7 +628,55 @@ export const Read = async (): Promise<void> => {
         setState(prev => ({ ...prev, inputPushMethod: pushMethod.toString() }));
       }
     }
+    if (state.chkEnableDevice) {
+      setState(p => ({ ...p, inputEnableDevice: '' }));
 
+      const frame = buildEwmFrame(6, buildOptReadPayload([28]));
+      const received = await sendAndReceiveQueued(connectedId, frame);
+
+      if (!received?.length) return;
+
+      const payload = parseDecryptedPayload(new Uint8Array(received));
+
+      if (payload.length >= 1) {
+        const value = payload[0] & 0xff;
+        if (value === 0 || value === 1) {
+          setState(p => ({ ...p, inputEnableDevice: value.toString() }));
+        }
+      }
+    }
+    if (state.chkPushEventMethod) {
+      setState(p => ({ ...p, inputPushEventMethod: '' }));
+
+      const frame = buildEwmFrame(6, buildOptReadPayload([42]));
+      const received = await sendAndReceiveQueued(connectedId, frame);
+
+      if (!received?.length) return;
+
+      const pld = parseDecryptedPayload(new Uint8Array(received));
+
+      if (pld.length >= 1) {
+        setState(p => ({ ...p, inputPushEventMethod: pld[0].toString() }));
+      }
+    }
+    if (state.chkPushEventIndex) {
+      setState(prev => ({ ...prev, inputPushEventIndex: '' }));
+
+      const payload = buildOptReadPayload([34]);
+      const frame = buildEwmFrame(6, payload);
+
+      const receivedData = await sendAndReceiveQueued(connectedId, frame);
+      if (!receivedData?.length) return;
+
+      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
+
+      if (decryptedPayload.length >= 4) {
+        const value = new DataView(decryptedPayload.buffer)
+          .getUint32(0, true); // ✅
+        setState(prev => ({ ...prev, inputPushEventIndex: value.toString() }));
+      }
+    }
+    
     // Q3
     if (state.chkQ3) {
       setState(prev => ({ ...prev, inputQ3: '' }));
@@ -941,23 +989,7 @@ export const Read = async (): Promise<void> => {
 
 
     // PushEventIndex
-    if (state.chkPushEventIndex) {
-      setState(prev => ({ ...prev, inputPushEventIndex: '' }));
-
-      const payload = buildOptReadPayload([34]);
-      const frame = buildEwmFrame(6, payload);
-
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      if (!receivedData?.length) return;
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-
-      if (decryptedPayload.length >= 4) {
-        const value = new DataView(decryptedPayload.buffer)
-          .getUint32(0, true); // ✅
-        setState(prev => ({ ...prev, inputPushEventIndex: value.toString() }));
-      }
-    }
+    
 
 
     // NB
@@ -1059,23 +1091,7 @@ export const Read = async (): Promise<void> => {
         }));
       }
     }
-    if (state.chkEnableDevice) {
-      setState(p => ({ ...p, inputEnableDevice: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([28]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const payload = parseDecryptedPayload(new Uint8Array(received));
-
-      if (payload.length >= 1) {
-        const value = payload[0] & 0xff;
-        if (value === 0 || value === 1) {
-          setState(p => ({ ...p, inputEnableDevice: value.toString() }));
-        }
-      }
-    }
+    
     if (state.chkSensor1) {
       setState(p => ({
         ...p,
@@ -1171,20 +1187,7 @@ export const Read = async (): Promise<void> => {
         setState(p => ({ ...p, inputEventConfig: pld[0].toString() }));
       }
     }
-    if (state.chkPushEventMethod) {
-      setState(p => ({ ...p, inputPushEventMethod: '' }));
 
-      const frame = buildEwmFrame(6, buildOptReadPayload([42]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 1) {
-        setState(p => ({ ...p, inputPushEventMethod: pld[0].toString() }));
-      }
-    }
     if (state.chkRandomMin) {
       setState(p => ({ ...p, inputRandomMin: '' }));
 
@@ -1285,6 +1288,8 @@ export function stringToAsciiBytes(str: string, length?: number): Uint8Array {
 }
 
 
+
+
 export const Write = async () => {
   const connectedId = store.state.hhu.idConnected;
   const { state } = hookProps;
@@ -1293,24 +1298,24 @@ export const Write = async () => {
     Alert.alert('Lỗi', 'Chưa kết nối thiết bị BLE');
     return;
   }
-
-  const showSuccess = (name: string) => {
-    Alert.alert('✅ Thành công', `${name} đã được ghi thành công`);
-  };
-
-  const showError = (name: string, err?: any) => {
-    Alert.alert('❌ Lỗi', `${name} ghi thất bại${err ? ': ' + err : ''}`);
-  };
-
+    const successList: string[] = [];
+    const errorList: string[] = [];
+    const pushResult = (ok: boolean, name: string, err?: any) => {
+  if (ok) successList.push(name);
+  else errorList.push(name + (err ? ` (${err})` : ''));
+};
     if (state.chkModuleNo) {
+      try {
       const moduleNoRaw = (state.inputModuleNo || '').trim();
       const moduleNoPadded = moduleNoRaw.padEnd(15, '\0');
       const moduleNoData = Array.from(stringToAsciiBytes(moduleNoPadded), b => b & 0xff);
       const payload = buildOptSetPayload([{ paramId: 6, data: moduleNoData }]);
       const frame = buildEwmFrame(5, payload);
       const recv = await sendAndReceiveQueued(connectedId, frame);
-      if (recv?.length) showSuccess('ModuleNo');
-      else showError('ModuleNo');
+      pushResult(!!recv?.length, 'ModuleNo');
+      } catch (e) {
+        pushResult(false, 'ModuleNo');
+      }
     }
 
     if (state.chkMeterNo) {
@@ -1320,12 +1325,11 @@ export const Write = async () => {
       const payload = buildOptSetPayload([{ paramId: 5, data: meterNoData }]);
       const frame = buildEwmFrame(5, payload);
       const recv = await sendAndReceiveQueued(connectedId, frame);
-      if (recv?.length) showSuccess('MeterNo');
-      else showError('MeterNo');
+      pushResult(!!recv?.length, 'MeterNo');
     }
 
     if (state.chkRTC) {
-      const time = state.radCustomTime ? new Date(state.dtpCustomTime) : new Date(); // radCustomTime=false => dùng thời gian hiện tại
+      const time = state.inputRTC ? new Date(state.inputRTC) : new Date(); // radCustomTime=false => dùng thời gian hiện tại
       const timeData: number[] = [
         time.getFullYear() % 100,
         time.getMonth() + 1,
@@ -1339,8 +1343,7 @@ export const Write = async () => {
       const frame = buildEwmFrame(5, payload);
 
       const recv = await sendAndReceiveQueued(connectedId, frame);
-      if (recv?.length) showSuccess('RTC');
-      else showError('RTC');
+      pushResult(!!recv?.length, 'RTC');
     }
 
 
@@ -1352,12 +1355,11 @@ export const Write = async () => {
         const payload = buildOptSetPayload([{ paramId: 2, data: Array.from(new Uint8Array(buf)) }]);
         const frame = buildEwmFrame(5, payload);
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        if (recv?.length) showSuccess('ImpData');
-        else showError('ImpData');
+        pushResult(!!recv?.length, 'ImpData');
       }
     }
 
-    if (state.chkExpData) {
+    if (state.chkImpData) {
       const v = Number(state.inputExpData);
       if (Number.isInteger(v) && v >= 0 && v <= 0xffffffff) {
         const buf = new ArrayBuffer(4);
@@ -1365,8 +1367,7 @@ export const Write = async () => {
         const payload = buildOptSetPayload([{ paramId: 3, data: Array.from(new Uint8Array(buf)) }]);
         const frame = buildEwmFrame(5, payload);
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        if (recv?.length) showSuccess('ExpData');
-        else showError('ExpData');
+        pushResult(!!recv?.length, 'ImpData');
       }
     }
 
@@ -1375,8 +1376,7 @@ export const Write = async () => {
       const payload = buildOptSetPayload([{ paramId: 11, data: Array.from(stringToAsciiBytes(ipport)) }]);
       const frame = buildEwmFrame(5, payload);
       const recv = await sendAndReceiveQueued(connectedId, frame);
-      if (recv?.length) showSuccess('IPPORT');
-      else showError('IPPORT');
+      pushResult(!!recv?.length, 'IPPORT');
     }
 
     if (state.chkQ3) {
@@ -1390,9 +1390,8 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        console.log('📤 Write Q3:', bytesToHex(frame));
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv Q3:', bytesToHex(recv || []));
+        pushResult(!!recv?.length, 'Q3');
       }
     }
 
@@ -1404,9 +1403,9 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        console.log('📤 Write LPR:', bytesToHex(frame));
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv LPR:', bytesToHex(recv || []));
+
+        pushResult(!!recv?.length, 'LPR');
       }
     }
 
@@ -1418,9 +1417,9 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        console.log('📤 Write ModuleType:', bytesToHex(frame));
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv ModuleType:', bytesToHex(recv || []));
+
+        pushResult(!!recv?.length, 'ModuleType');
       }
     }
 
@@ -1432,9 +1431,9 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        console.log('📤 Write ResetCount:', bytesToHex(frame));
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv ResetCount:', bytesToHex(recv || []));
+
+                pushResult(!!recv?.length, 'ResetCount');
       }
     }
     if (state.chkLatchPeriod) {
@@ -1448,9 +1447,9 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        console.log('📤 Write LatchPeriod:', bytesToHex(frame));
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv LatchPeriod:', bytesToHex(recv || []));
+
+        pushResult(!!recv?.length, 'LatchPeriod');
       }
     }
     if (state.chkPushMethod) {
@@ -1461,9 +1460,8 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        console.log('📤 Write PushMethod:', bytesToHex(frame));
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv PushMethod:', bytesToHex(recv || []));
+        pushResult(!!recv?.length, 'PushMethod');
       }
     }
     if (state.chkPushPeriod) {
@@ -1477,9 +1475,9 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        console.log('📤 Write PushPeriod:', bytesToHex(frame));
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv PushPeriod:', bytesToHex(recv || []));
+
+        pushResult(!!recv?.length, 'PushPeriod');
       }
     }
     if (state.chkPushTime1) {
@@ -1494,9 +1492,8 @@ export const Write = async () => {
           ]);
 
           const frame = buildEwmFrame(5, payload);
-          console.log('📤 Write PushTime1:', bytesToHex(frame));
           const recv = await sendAndReceiveQueued(connectedId, frame);
-          console.log('📦 Recv PushTime1:', bytesToHex(recv || []));
+           pushResult(!!recv?.length, 'PushTime1');
         }
       }
     }
@@ -1512,9 +1509,9 @@ export const Write = async () => {
           ]);
 
           const frame = buildEwmFrame(5, payload);
-          console.log('📤 Write PushTime2:', bytesToHex(frame));
           const recv = await sendAndReceiveQueued(connectedId, frame);
-          console.log('📦 Recv PushTime2:', bytesToHex(recv || []));
+
+           pushResult(!!recv?.length, 'PushTime2');
         }
       }
     }
@@ -1529,9 +1526,8 @@ export const Write = async () => {
 
         const frame = buildEwmFrame(5, payload);
 
-        console.log('📤 Enable Device:', bytesToHex(frame));
-        const receivedData = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv Enable Device:', bytesToHex(receivedData ?? new Uint8Array()));
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+        pushResult(!!recv?.length, 'Enable Device');
       } else {
         console.log('❌ EnableDevice chỉ nhận 0 hoặc 1');
       }
@@ -1542,10 +1538,9 @@ export const Write = async () => {
       ]);
 
       const frame = buildEwmFrame(5, payload);
-      console.log('📤 Clear Data:', bytesToHex(frame));
 
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('📦 Recv Clear Data:', bytesToHex(receivedData ?? new Uint8Array()));
+      const recv = await sendAndReceiveQueued(connectedId, frame);
+      pushResult(!!recv?.length, 'Clear Data');
     }
 
     if (state.chkPushData) {
@@ -1554,10 +1549,8 @@ export const Write = async () => {
       ]);
 
       const frame = buildEwmFrame(5, payload);
-
-      console.log('📤 Push Data:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('📦 Recv Push Data:', bytesToHex(receivedData ?? new Uint8Array()));
+      const recv = await sendAndReceiveQueued(connectedId, frame);
+      pushResult(!!recv?.length, 'Push Data');
     }
     if (state.chkResetModule) {
       const payload = buildOptSetPayload([
@@ -1566,9 +1559,9 @@ export const Write = async () => {
 
       const frame = buildEwmFrame(5, payload);
 
-      console.log('📤 Reset Module:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('📦 Recv Reset Module:', bytesToHex(receivedData ?? new Uint8Array()));
+      const recv = await sendAndReceiveQueued(connectedId, frame);
+      
+      pushResult(!!recv?.length, 'Reset Module');
     }
     if (state.chkBatteryCapacity) {
       const value = Number(state.inputBatteryCapacity);
@@ -1582,10 +1575,9 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-
-        console.log('📤 Battery Capacity:', bytesToHex(frame));
-        const receivedData = await sendAndReceiveQueued(connectedId, frame);
-        console.log('📦 Recv Battery Capacity:', bytesToHex(receivedData ?? new Uint8Array()));
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+      
+        pushResult(!!recv?.length, 'Battery Capacity');
       } else {
         console.log('❌ BatteryCapacity không hợp lệ');
       }
@@ -1599,7 +1591,8 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        await sendAndReceiveQueued(connectedId, frame);
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+        pushResult(!!recv?.length, 'Event Config');
       } else {
         console.log('❌ EventConfig không hợp lệ');
       }
@@ -1613,7 +1606,8 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        await sendAndReceiveQueued(connectedId, frame);
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+        pushResult(!!recv?.length, 'Push Event Method');
       } else {
         console.log('❌ PushEventMethod không hợp lệ');
       }
@@ -1627,7 +1621,8 @@ export const Write = async () => {
         ]);
 
         const frame = buildEwmFrame(5, payload);
-        await sendAndReceiveQueued(connectedId, frame);
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+        pushResult(!!recv?.length, 'Time Zone');
       } else {
         console.log('❌ TimeZone không hợp lệ');
       }
@@ -1644,15 +1639,26 @@ export const Write = async () => {
 
       const frame = buildEwmFrame(5, payload);
 
-      console.log('📤 Voltage Threshold:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('📦 Recv Voltage Threshold:', bytesToHex(receivedData ?? new Uint8Array()));
+      const recv = await sendAndReceiveQueued(connectedId, frame);
+
+      pushResult(!!recv?.length, 'Voltage Threshold:');
     } else {
       console.log('❌ VoltageThreshold chỉ từ 2.5 đến 3.3');
     }
     
 
     }
+      if (successList.length || errorList.length) {
+      let msg = '';
 
-  console.log('✅ Hoàn tất ghi từng mục đã chọn');
+      if (successList.length) {
+        msg += '✅ Ghi thành công:\n• ' + successList.join('\n• ') + '\n\n';
+      }
+
+      if (errorList.length) {
+        msg += '❌ Ghi thất bại:\n• ' + errorList.join('\n• ');
+      }
+
+      Alert.alert('Kết quả ghi dữ liệu', msg.trim());
+    }
 };

@@ -92,7 +92,7 @@ let sending = false;
 export function sendAndReceiveQueued(
   id: string,
   frame: number[],
-  timeout = 2000,
+  timeout = 1000,
 ): Promise<number[]> {
   return new Promise((resolve, reject) => {
     taskQueue.push({ frame, timeout, resolve, reject });
@@ -118,7 +118,6 @@ async function processQueue(id: string) {
   } catch (e) {
     task.reject(e);
   } finally {
-    await sleep(120);
     sending = false;
     processQueue(id);
   }
