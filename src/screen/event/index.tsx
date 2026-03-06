@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { EventItem, GetHookProps, hookProps } from './controller';
 import { onReadEvent } from './handleButton';
+import SystemHeader from '../../component/SystemHeader';
 
 export default function EventScreen() {
   const hookProps = GetHookProps();
@@ -17,16 +18,13 @@ export default function EventScreen() {
 
   return (
     <View style={styles.container}>
+      <SystemHeader title="ĐỌC SỰ KIỆN" subTitle="TỪ (1-32)" />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* ================= FILTER ================= */}
         <View style={styles.filterBox}>
-          <View style={styles.filterRow}>
-            <Text style={styles.label}>Đọc sự kiện (1 - 32)</Text>
-          </View>
-
           <View style={styles.filterInputs}>
             <TextInput
               style={styles.input}
@@ -83,7 +81,11 @@ export default function EventScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9', padding: 10 },
+ container: {
+    flex: 1,
+    backgroundColor: '#f4f6f9',
+    padding: 10,
+  },
   scrollContent: { paddingBottom: 90 },
 
   bottomBar: {

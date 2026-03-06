@@ -36,6 +36,8 @@ export type PropsAppSetting = {
     port: string;
     enableReadNotGelex: boolean;
     isOnlyGetIntegers: boolean;
+    lastConnectedId:string;
+    lastConnectedName :string;
   };
 };
 
@@ -66,6 +68,8 @@ export const getDefaultStorageValue = (): PropsAppSetting => ({
     port: '5050',
     enableReadNotGelex: false,
     isOnlyGetIntegers: true,
+    lastConnectedId:'',
+    lastConnectedName :'',
   },
 });
 

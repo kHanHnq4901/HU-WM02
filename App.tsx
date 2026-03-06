@@ -3,8 +3,10 @@ import { StatusBar, StyleSheet, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 
-import BottomBar from './src/navigation/BottomBar';
+// Sửa đường dẫn import cho đúng với cấu trúc thư mục của bạn
+
 import { StoreProvider } from './src/store';
+import AppNavigator from './src/navigation/Navigator';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -16,7 +18,8 @@ function App() {
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
           />
-          <BottomBar />
+          {/* Thay thế BottomBar bằng AppNavigator */}
+          <AppNavigator />
         </NavigationContainer>
       </SafeAreaProvider>
     </StoreProvider>

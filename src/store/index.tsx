@@ -2,11 +2,10 @@ import React, { Dispatch, SetStateAction, useState } from 'react';
 import { getDefaultStorageValue, PropsAppSetting } from '../service/storage';
 import { Platform } from 'react-native';
 
-
 export type TYPE_TOUCH_ID = 'FaceID' | 'TouchID' | 'NoSupport';
 
-export type PropsInfoUser= {
-  userId : string ;
+export type PropsInfoUser = {
+  userId: string;
   userName: string;
   passWord: string;
   token: string;
@@ -18,8 +17,12 @@ type PropsState = {
     serviceUUID: string;
     isConnected: boolean;
     connect: 'DISCONNECTED' | 'CONNECTED' | 'CONNECTING';
-    idConnected: string ;
-    name :string ;
+    idConnected: string;
+    name: string;
+    // 🔥 THÊM 2 TRƯỜNG LƯU TRỮ LỊCH SỬ KẾT NỐI
+    idConnectLast: string;
+    nameConnectLast: string; 
+    
     version: string;
     shortVersion: string;
     rssi: number;
@@ -31,7 +34,6 @@ type PropsState = {
   app: {
     mdVersion: boolean;
     enableDebug: boolean;
-    
   };
   alert: {
     show: boolean;
@@ -46,19 +48,17 @@ type PropsState = {
       onDissmiss: (value?: any) => void;
       onOKPress: () => void;
     };
-  
   };
 
   userRole: 'customer' | 'dvkh' | 'admin' | 'sx';
   typeTouchID: TYPE_TOUCH_ID;
 
   infoUser: {
-    //user: PropsLoginServerReturn;
     moreInfoUser: PropsInfoUser;
   };
   isCredential: boolean;
-  
 };
+
 export type PropsStore = {
   state: PropsState;
   setState: Dispatch<React.SetStateAction<PropsState>>;
@@ -67,16 +67,19 @@ export type PropsStore = {
 export const storeContext = React.createContext<PropsStore>(null);
 
 export const StoreProvider = ({ children }) => {
-
   const [hook, setHook] = useState<PropsState>({
     hhu: {
       isConnected: false,
       connect: 'DISCONNECTED',
       idConnected: '',
+      name: '',
+      // 🔥 Khởi tạo giá trị rỗng cho 2 trường lịch sử
+      idConnectLast: '', 
+      nameConnectLast: '',
+
       version: '',
       shortVersion: '',
       rssi: 0,
-      name: '',
       serviceUUID: '',          
       characteristicUUID: '',
     },
@@ -113,7 +116,6 @@ export const StoreProvider = ({ children }) => {
       }
     },
     isCredential: false,
-    
   });
 
   const initialalue: PropsStore = {

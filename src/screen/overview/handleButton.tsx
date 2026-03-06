@@ -342,7 +342,7 @@ export const Read = async (): Promise<void> => {
       const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
       console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
 
-      const meterNoBytes = decryptedPayload.slice(0, 16);
+      const meterNoBytes = decryptedPayload.slice(0, 15);
       const meterNo = String.fromCharCode(...meterNoBytes).trim();
       console.log ('meterNoBytes ' + meterNoBytes)
       console.log ('meterNo ' + meterNo)
@@ -512,6 +512,7 @@ export const Read = async (): Promise<void> => {
       const frame = buildEwmFrame(6, payload);
 
       console.log('Send:', bytesToHex(frame));
+
       const receivedData = await sendAndReceiveQueued(connectedId, frame);
       console.log('Recv:', bytesToHex(receivedData || []));
 
@@ -520,29 +521,37 @@ export const Read = async (): Promise<void> => {
         return;
       }
 
-      const decryptedPayload = parseDecryptedPayload(
-        new Uint8Array(receivedData)
-      );
+      try {
+        const raw = new Uint8Array(receivedData);
 
-      console.log('Payload:', bytesToHex(decryptedPayload));
+        // LOG RAW
+        console.log('RAW:', bytesToHex(raw));
 
-      // ✅ Y HỆT C#: Take(25) + Encoding.ASCII
-      if (decryptedPayload.length >= 25) {
-        const ipPortBytes = decryptedPayload.slice(0, 25);
-        const ipPort = asciiLikeDotNet(ipPortBytes);
+        // GIẢI MÃ
+        const decryptedPayload = parseDecryptedPayload(raw);
 
-        console.log('IP/PORT:', ipPort); // 👉 14.225.244.63:4399
+        console.log('DECRYPTED:', bytesToHex(decryptedPayload));
 
-        setState(prev => ({
-          ...prev,
-          inputIPPORT: ipPort,
-        }));
-      } else {
-        console.log('[Lỗi] Payload IP/PORT không đủ độ dài');
+        if (25 <= decryptedPayload.length ) {
+          const ipPortBytes = decryptedPayload.slice(0, 25);
+
+          console.log('IPPORT HEX:', bytesToHex(ipPortBytes));
+
+          const ipPort = byteToAscii(ipPortBytes);
+
+          console.log('IP/PORT:', ipPort);
+
+          setState(prev => ({
+            ...prev,
+            inputIPPORT: ipPort,
+          }));
+        } else {
+          console.log('[Lỗi] Payload IP/PORT không đủ độ dài');
+        }
+      } catch (err) {
+        console.log('[Lỗi giải mã]', err);
       }
     }
-
-
     // Latch Period
     if (state.chkLatchPeriod) {
       setState(prev => ({ ...prev, inputLatchPeriod: '' }));
@@ -572,8 +581,7 @@ export const Read = async (): Promise<void> => {
       }
     }
 
-
-    // Push Period
+        // Push Period
     if (state.chkPushPeriod) {
       setState(prev => ({ ...prev, inputPushPeriod: '' }));
 
@@ -602,12 +610,10 @@ export const Read = async (): Promise<void> => {
       }
     }
 
+     if (state.chkTemp) {
+      setState(prev => ({ ...prev, inputTemp: '' }));
 
-    // Push Method
-    if (state.chkPushMethod) {
-      setState(prev => ({ ...prev, inputPushMethod: '' }));
-
-      const paramIds = [17];
+      const paramIds = [22];
       const payload = buildOptReadPayload(paramIds);
       const frame = buildEwmFrame(6, payload);
 
@@ -624,59 +630,35 @@ export const Read = async (): Promise<void> => {
       console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
 
       if (0 < decryptedPayload.length) {
-        const pushMethod = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputPushMethod: pushMethod.toString() }));
+        const temp = decryptedPayload[0];
+        setState(prev => ({ ...prev, inputTemp: temp.toString() }));
       }
     }
-    if (state.chkEnableDevice) {
-      setState(p => ({ ...p, inputEnableDevice: '' }));
+      // ResetCount
+    if (state.chkResetCount) {
+      setState(prev => ({ ...prev, inputResetCount: '' }));
 
-      const frame = buildEwmFrame(6, buildOptReadPayload([28]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const payload = parseDecryptedPayload(new Uint8Array(received));
-
-      if (payload.length >= 1) {
-        const value = payload[0] & 0xff;
-        if (value === 0 || value === 1) {
-          setState(p => ({ ...p, inputEnableDevice: value.toString() }));
-        }
-      }
-    }
-    if (state.chkPushEventMethod) {
-      setState(p => ({ ...p, inputPushEventMethod: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([42]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 1) {
-        setState(p => ({ ...p, inputPushEventMethod: pld[0].toString() }));
-      }
-    }
-    if (state.chkPushEventIndex) {
-      setState(prev => ({ ...prev, inputPushEventIndex: '' }));
-
-      const payload = buildOptReadPayload([34]);
+      const paramIds = [24];
+      const payload = buildOptReadPayload(paramIds);
       const frame = buildEwmFrame(6, payload);
 
+      console.log("Send: " + bytesToHex(frame));
       const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      if (!receivedData?.length) return;
+      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
+
+      if (!receivedData || receivedData.length === 0) {
+        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
+        return;
+      }
 
       const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
+      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
 
-      if (decryptedPayload.length >= 4) {
-        const value = new DataView(decryptedPayload.buffer)
-          .getUint32(0, true); // ✅
-        setState(prev => ({ ...prev, inputPushEventIndex: value.toString() }));
+      if (0 < decryptedPayload.length) {
+        const resetCount = decryptedPayload[0];
+        setState(prev => ({ ...prev, inputResetCount: resetCount.toString() }));
       }
     }
-    
     // Q3
     if (state.chkQ3) {
       setState(prev => ({ ...prev, inputQ3: '' }));
@@ -707,8 +689,26 @@ export const Read = async (): Promise<void> => {
         }));
       }
     }
+    // Push Method
+  
+    if (state.chkPushEventIndex) {
+      setState(prev => ({ ...prev, inputPushEventIndex: '' }));
 
+      const payload = buildOptReadPayload([34]);
+      const frame = buildEwmFrame(6, payload);
 
+      const receivedData = await sendAndReceiveQueued(connectedId, frame);
+      if (!receivedData?.length) return;
+
+      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
+
+      if (decryptedPayload.length >= 4) {
+        const value = new DataView(decryptedPayload.buffer)
+          .getUint32(0, true); // ✅
+        setState(prev => ({ ...prev, inputPushEventIndex: value.toString() }));
+      }
+    }
+    
     // LPR
     if (state.chkLPR) {
       setState(prev => ({ ...prev, inputLPR: '' }));
@@ -814,30 +814,7 @@ export const Read = async (): Promise<void> => {
     }
 
     // Temp
-    if (state.chkTemp) {
-      setState(prev => ({ ...prev, inputTemp: '' }));
-
-      const paramIds = [22];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const temp = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputTemp: temp.toString() }));
-      }
-    }
+   
 
     // Voltage
     if (state.chkVoltage) {
@@ -898,31 +875,7 @@ export const Read = async (): Promise<void> => {
     }
 
 
-    // ResetCount
-    if (state.chkResetCount) {
-      setState(prev => ({ ...prev, inputResetCount: '' }));
-
-      const paramIds = [24];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const resetCount = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputResetCount: resetCount.toString() }));
-      }
-    }
+  
 
     // LatDataIndex
     if (state.chkLatDataIndex) {
@@ -1231,7 +1184,61 @@ export const Read = async (): Promise<void> => {
 
       setState(p => ({ ...p, inputQCCID: qccid }));
     }
+      if (state.chkPushMethod) {
+      setState(prev => ({ ...prev, inputPushMethod: '' }));
 
+      const paramIds = [17];
+      const payload = buildOptReadPayload(paramIds);
+      const frame = buildEwmFrame(6, payload);
+
+      console.log("Send: " + bytesToHex(frame));
+      const receivedData = await sendAndReceiveQueued(connectedId, frame);
+      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
+
+      if (!receivedData || receivedData.length === 0) {
+        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
+        return;
+      }
+
+      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
+      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
+
+      if (0 < decryptedPayload.length) {
+        const pushMethod = decryptedPayload[0];
+        setState(prev => ({ ...prev, inputPushMethod: pushMethod.toString() }));
+      }
+    }
+    if (state.chkEnableDevice) {
+      setState(p => ({ ...p, inputEnableDevice: '' }));
+
+      const frame = buildEwmFrame(6, buildOptReadPayload([28]));
+      const received = await sendAndReceiveQueued(connectedId, frame);
+
+      if (!received?.length) return;
+
+      const payload = parseDecryptedPayload(new Uint8Array(received));
+
+      if (payload.length >= 1) {
+        const value = payload[0] & 0xff;
+        if (value === 0 || value === 1) {
+          setState(p => ({ ...p, inputEnableDevice: value.toString() }));
+        }
+      }
+    }
+    if (state.chkPushEventMethod) {
+      setState(p => ({ ...p, inputPushEventMethod: '' }));
+
+      const frame = buildEwmFrame(6, buildOptReadPayload([42]));
+      const received = await sendAndReceiveQueued(connectedId, frame);
+
+      if (!received?.length) return;
+
+      const pld = parseDecryptedPayload(new Uint8Array(received));
+
+      if (pld.length >= 1) {
+        setState(p => ({ ...p, inputPushEventMethod: pld[0].toString() }));
+      }
+    }
 
     } catch (ex: any) {
       Alert.alert('Lỗi', ex.toString());
@@ -1255,7 +1262,7 @@ export function asciiBytesToString(bytes: Uint8Array): string {
   return result.trim();
 }
 
-function asciiLikeDotNet(bytes: Uint8Array): string {
+function byteToAscii(bytes: Uint8Array): string {
   let result = '';
   for (let i = 0; i < bytes.length; i++) {
     const b = bytes[i];
@@ -1265,6 +1272,7 @@ function asciiLikeDotNet(bytes: Uint8Array): string {
   }
   return result.trim();
 }
+
 export function stringToAsciiBytes(str: string, length?: number): Uint8Array {
   const bytes: number[] = [];
   for (let i = 0; i < str.length; i++) {
@@ -1373,12 +1381,25 @@ export const Write = async () => {
 
     if (state.chkIPPORT) {
       const ipport = (state.inputIPPORT || '').padEnd(25, '\0');
+      console.log(ipport)
       const payload = buildOptSetPayload([{ paramId: 11, data: Array.from(stringToAsciiBytes(ipport)) }]);
       const frame = buildEwmFrame(5, payload);
       const recv = await sendAndReceiveQueued(connectedId, frame);
       pushResult(!!recv?.length, 'IPPORT');
     }
+        if (state.chkResetCount) {
+      const v = Number(state.inputResetCount);
+      if (Number.isInteger(v) && v >= 0 && v <= 255) {
+        const payload = buildOptSetPayload([
+          { paramId: 24, data: [v & 0xff] },
+        ]);
 
+        const frame = buildEwmFrame(5, payload);
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+
+                pushResult(!!recv?.length, 'ResetCount');
+      }
+    }
     if (state.chkQ3) {
       const v = Number(state.inputQ3);
       if (Number.isInteger(v)) {
@@ -1423,17 +1444,20 @@ export const Write = async () => {
       }
     }
 
-    if (state.chkResetCount) {
-      const v = Number(state.inputResetCount);
-      if (Number.isInteger(v) && v >= 0 && v <= 255) {
+        if (state.chkPushPeriod) {
+      const v = Number(state.inputPushPeriod);
+      if (Number.isInteger(v) && v >= 0 && v <= 65535) {
+        const buf = new ArrayBuffer(2);
+        new DataView(buf).setUint16(0, v, true);
+
         const payload = buildOptSetPayload([
-          { paramId: 24, data: [v & 0xff] },
+          { paramId: 18, data: Array.from(new Uint8Array(buf)) },
         ]);
 
         const frame = buildEwmFrame(5, payload);
         const recv = await sendAndReceiveQueued(connectedId, frame);
 
-                pushResult(!!recv?.length, 'ResetCount');
+        pushResult(!!recv?.length, 'PushPeriod');
       }
     }
     if (state.chkLatchPeriod) {
@@ -1452,34 +1476,7 @@ export const Write = async () => {
         pushResult(!!recv?.length, 'LatchPeriod');
       }
     }
-    if (state.chkPushMethod) {
-      const v = Number(state.inputPushMethod);
-      if (v === 1 || v === 2) {
-        const payload = buildOptSetPayload([
-          { paramId: 17, data: [v] },
-        ]);
-
-        const frame = buildEwmFrame(5, payload);
-        const recv = await sendAndReceiveQueued(connectedId, frame);
-        pushResult(!!recv?.length, 'PushMethod');
-      }
-    }
-    if (state.chkPushPeriod) {
-      const v = Number(state.inputPushPeriod);
-      if (Number.isInteger(v) && v >= 0 && v <= 65535) {
-        const buf = new ArrayBuffer(2);
-        new DataView(buf).setUint16(0, v, true);
-
-        const payload = buildOptSetPayload([
-          { paramId: 18, data: Array.from(new Uint8Array(buf)) },
-        ]);
-
-        const frame = buildEwmFrame(5, payload);
-        const recv = await sendAndReceiveQueued(connectedId, frame);
-
-        pushResult(!!recv?.length, 'PushPeriod');
-      }
-    }
+    
     if (state.chkPushTime1) {
       const m = /^(\d{1,2}):(\d{1,2})$/.exec(state.inputPushTime1 || '');
       if (m) {
@@ -1516,22 +1513,7 @@ export const Write = async () => {
       }
     }
 
-    if (state.chkEnableDevice) {
-      const value = Number(state.inputEnableDevice);
-
-      if (value === 0 || value === 1) {
-        const payload = buildOptSetPayload([
-          { paramId: 28, data: Uint8Array.from([value]) },
-        ]);
-
-        const frame = buildEwmFrame(5, payload);
-
-        const recv = await sendAndReceiveQueued(connectedId, frame);
-        pushResult(!!recv?.length, 'Enable Device');
-      } else {
-        console.log('❌ EnableDevice chỉ nhận 0 hoặc 1');
-      }
-    }
+    
        if (state.chkClearData) {
       const payload = buildOptSetPayload([
         { paramId: 27, data: [] }, // ✅ number[]
@@ -1597,21 +1579,7 @@ export const Write = async () => {
         console.log('❌ EventConfig không hợp lệ');
       }
     }
-    if (state.chkPushEventMethod) {
-      const value = Number(state.inputPushEventMethod);
-
-      if (value >= 0 && value <= 255) {
-        const payload = buildOptSetPayload([
-          { paramId: 42, data: Uint8Array.from([value]) },
-        ]);
-
-        const frame = buildEwmFrame(5, payload);
-        const recv = await sendAndReceiveQueued(connectedId, frame);
-        pushResult(!!recv?.length, 'Push Event Method');
-      } else {
-        console.log('❌ PushEventMethod không hợp lệ');
-      }
-    }
+   
     if (state.chkTimeZone) {
       const value = Number(state.inputTimeZone);
 
@@ -1660,5 +1628,48 @@ export const Write = async () => {
       }
 
       Alert.alert('Kết quả ghi dữ liệu', msg.trim());
+    }
+    if (state.chkPushMethod) {
+      const v = Number(state.inputPushMethod);
+      if (v === 1 || v === 2) {
+        const payload = buildOptSetPayload([
+          { paramId: 17, data: [v] },
+        ]);
+
+        const frame = buildEwmFrame(5, payload);
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+        pushResult(!!recv?.length, 'PushMethod');
+      }
+    }
+    if (state.chkEnableDevice) {
+      const value = Number(state.inputEnableDevice);
+
+      if (value === 0 || value === 1) {
+        const payload = buildOptSetPayload([
+          { paramId: 28, data: Uint8Array.from([value]) },
+        ]);
+
+        const frame = buildEwmFrame(5, payload);
+
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+        pushResult(!!recv?.length, 'Enable Device');
+      } else {
+        console.log('❌ EnableDevice chỉ nhận 0 hoặc 1');
+      }
+    }
+     if (state.chkPushEventMethod) {
+      const value = Number(state.inputPushEventMethod);
+
+      if (value >= 0 && value <= 255) {
+        const payload = buildOptSetPayload([
+          { paramId: 42, data: Uint8Array.from([value]) },
+        ]);
+
+        const frame = buildEwmFrame(5, payload);
+        const recv = await sendAndReceiveQueued(connectedId, frame);
+        pushResult(!!recv?.length, 'Push Event Method');
+      } else {
+        console.log('❌ PushEventMethod không hợp lệ');
+      }
     }
 };

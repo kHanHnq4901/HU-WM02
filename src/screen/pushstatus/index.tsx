@@ -11,6 +11,7 @@ import {
 import { storeContext } from '../../store';
 import { GetHookProps, hookProps } from './controller';
 import { onReadData } from './handleButton';
+import SystemHeader from '../../component/SystemHeader';
 
 export default function PushStatusScreen() {
 
@@ -18,14 +19,13 @@ export default function PushStatusScreen() {
   const { state, setState } = hookProps;
   return (
   <View style={styles.container}>
+    <SystemHeader title="ĐỌC TRẠNG THÁI ĐẨY" subTitle="TỪ (1-100)" />
     <ScrollView
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.filterBox}>
-        <View style={styles.filterRow}>
-          <Text style={styles.label}>Đọc trạng thái đẩy từ (1 - 100)</Text>
-        </View>
+
 
         <View style={styles.filterInputs}>
           <TextInput

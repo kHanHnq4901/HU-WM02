@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { GetHookProps } from './controller';
 import { onReadData } from './handleButton';
+import SystemHeader from '../../component/SystemHeader';
 
 type DataItem = {
   id: number;
@@ -24,11 +25,10 @@ export default function DataScreen() {
 
   return (
     <View style={styles.container}>
+      <SystemHeader title="ĐỌC DỮ LIỆU" subTitle="TỪ (1-720)" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* ================= FILTER ================= */}
         <View style={styles.filterBox}>
-          <Text style={styles.label}>Đọc dữ liệu (1 - 720)</Text>
-
           <View style={styles.filterInputs}>
             <TextInput
               style={styles.input}
@@ -89,7 +89,11 @@ export default function DataScreen() {
 
 /* ===================== STYLE ===================== */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9', padding: 10 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f4f6f9',
+    padding: 10,
+  },
   scrollContent: { paddingBottom: 90 },
 
   bottomBar: {

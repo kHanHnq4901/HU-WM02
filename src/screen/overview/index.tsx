@@ -13,6 +13,7 @@ import { requestBlePermission } from '../../util/ble';
 import { formatRTC, GetHookProps } from './controller';
 import { Read, Write } from './handleButton';
 import { Radio } from '../../component/radio';
+import SystemHeader from '../../component/SystemHeader';
 
 
 type FieldUI = {
@@ -74,23 +75,23 @@ export default function Overview() {
       { label: 'Địa chỉ IP', chkKey: 'chkIPPORT', inputKey: 'inputIPPORT' },
       { label: 'Chu kỳ lưu (phút)', chkKey: 'chkLatchPeriod', inputKey: 'inputLatchPeriod' },
       { label: 'Chu kỳ gửi (phút)', chkKey: 'chkPushPeriod', inputKey: 'inputPushPeriod' },
-      { label: 'Phương thức gửi', chkKey: 'chkPushMethod', inputKey: 'inputPushMethod' },
-      { label: 'Trạng thái kích hoạt thiết bị', chkKey: 'chkEnableDevice', inputKey: 'inputEnableDevice' },
-      { label: 'Phương thức gửi sự kiện', chkKey: 'chkPushEventMethod', inputKey: 'inputPushEventMethod' },
+      { label: 'Trạng thái reset gần nhất', chkKey: 'chkTemp', inputKey: 'inputTemp' },
+      { label: 'Số lần Reset', chkKey: 'chkResetCount', inputKey: 'inputResetCount' },
       { label: 'Lưu lượng Q3', chkKey: 'chkQ3', inputKey: 'inputQ3' },
       { label: 'Số lít mỗi vòng', chkKey: 'chkLPR', inputKey: 'inputLPR' },
       { label: 'Loại Module', chkKey: 'chkModuleType', inputKey: 'inputModuleType' },
       { label: 'Thời điểm gửi 1', chkKey: 'chkPushTime1', inputKey: 'inputPushTime1' },
       { label: 'Thời điểm gửi 2', chkKey: 'chkPushTime2', inputKey: 'inputPushTime2' },
-      { label: 'Trạng thái reset gần nhất', chkKey: 'chkTemp', inputKey: 'inputTemp' },
       { label: 'Điện áp (V)', chkKey: 'chkVoltage', inputKey: 'inputVoltage' },
       { label: 'Thời gian pin còn lại', chkKey: 'chkRemainBattery', inputKey: 'inputRemainBattery' },
-      { label: 'Số lần Reset', chkKey: 'chkResetCount', inputKey: 'inputResetCount' },
       { label: 'Dung lượng pin', chkKey: 'chkBatteryCapacity', inputKey: 'inputBatteryCapacity' },
       { label: 'Cấu hình sự kiện', chkKey: 'chkEventConfig', inputKey: 'inputEventConfig' },
       { label: 'Thời gian ngẫu nhiên', chkKey: 'chkRandomMin', inputKey: 'inputRandomMin' },
       { label: 'Múi giờ', chkKey: 'chkTimeZone', inputKey: 'inputTimeZone' },
       { label: 'QCCID', chkKey: 'chkQCCID', inputKey: 'inputQCCID' },
+      { label: 'Phương thức gửi', chkKey: 'chkPushMethod', inputKey: 'inputPushMethod' },
+      { label: 'Trạng thái kích hoạt thiết bị', chkKey: 'chkEnableDevice', inputKey: 'inputEnableDevice' },
+      { label: 'Phương thức gửi sự kiện', chkKey: 'chkPushEventMethod', inputKey: 'inputPushEventMethod' },
     ],
     []
   );
@@ -120,8 +121,6 @@ export default function Overview() {
       return n;
     });
   };
-
-  /* ================= RENDER FIELD ================= */
 
   const renderField = (item: FieldUI) => {
     const enabled = !!state[item.chkKey];
@@ -180,15 +179,15 @@ export default function Overview() {
         
             <Radio
               label="Gửi theo chu kỳ"
-              checked={state.inputPushEventMethod == '1'}
+              checked={state.inputPushEventMethod == '0'}
               disabled={!enabled}
-              onPress={() => updateValue(item.inputKey, '1')}
+              onPress={() => updateValue(item.inputKey, '0')}
             />
             <Radio
               label="Gửi tức thời"
-              checked={state.inputPushEventMethod == '2'}
+              checked={state.inputPushEventMethod == '1'}
               disabled={!enabled}
-              onPress={() => updateValue(item.inputKey, '2')}
+              onPress={() => updateValue(item.inputKey, '1')}
             />
           </View>
         )}
@@ -282,8 +281,7 @@ export default function Overview() {
   return (
     <KeyboardAvoidingView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        <Text style={styles.title}>CẤU HÌNH</Text>
-
+        <SystemHeader title="CẤU HÌNH" subTitle="ĐỌC DỮ LIỆU ĐỒNG HỒ" />
         <View style={styles.selectRow}>
           <TouchableOpacity onPress={selectAll}>
             <Text style={styles.selectAll}>✔ Chọn tất cả</Text>
@@ -343,14 +341,19 @@ export default function Overview() {
 /* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f8' },
+    container: {
+    flex: 1,
+    backgroundColor: '#f4f6f9',
+    padding: 10,
+  },
+
   title: { fontSize: 16, fontWeight: 'bold', textAlign: 'center', margin: 10 },
   selectRow: { flexDirection: 'row', justifyContent: 'space-between', margin: 10 },
   selectAll: { color: '#1976D2', fontWeight: 'bold' },
   unselectAll: { color: '#D32F2F', fontWeight: 'bold' },
 
   doubleRow: { flexDirection: 'row' },
-  field: { flex: 1, margin: 6, backgroundColor: '#fff', padding: 8, borderRadius: 8 },
+  field: { flex: 1, margin: 6, backgroundColor: '#fff', padding: 0, borderRadius: 8 },
 
   checkRow: { flexDirection: 'row', alignItems: 'center' },
   label: { fontSize: 11, marginLeft: 6 },
@@ -378,9 +381,9 @@ const styles = StyleSheet.create({
 
   radioLabel: { marginLeft: 6 },
 
-  bottomButtons: { flexDirection: 'row', padding: 8 },
-  btnRead: { flex: 1, backgroundColor: '#1976D2', margin: 6, padding: 12, borderRadius: 8 },
-  btnWrite: { flex: 1, backgroundColor: '#D32F2F', margin: 6, padding: 12, borderRadius: 8 },
+  bottomButtons: { flexDirection: 'row', padding: 0},
+  btnRead: { flex: 1, backgroundColor: '#1976D2', margin: 2, padding: 12, borderRadius: 8 },
+  btnWrite: { flex: 1, backgroundColor: '#D32F2F', margin: 2, padding: 12, borderRadius: 8 },
   btnText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
   commandBox: {
   margin: 10,

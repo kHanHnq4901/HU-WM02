@@ -1,6 +1,5 @@
 // controller.ts
 import React, { useContext, useState } from 'react';
-import { Alert } from 'react-native';
 import { PropsStore, storeContext } from '../../store';
 
 export type EventItem = {
@@ -8,11 +7,24 @@ export type EventItem = {
   time: string;
   event: string;
 };
+
 export type HookState = {
   fromValue: string;
   toValue: string;
   eventList: EventItem[];
+
+  currentVersion: string;
+  remoteVersion: string;
+  loadingCurrentVersion: boolean;
+  loadingRemoteVersion: boolean;
+
+  // ===== OTA =====
+  otaProgress: number;
+  otaSent: number;
+  otaTotal: number;
+  otaRunning: boolean;
 };
+
 
 export type HookProps = {
   state: HookState;
@@ -28,7 +40,18 @@ export const GetHookProps = (): HookProps => {
     fromValue: '1',
     toValue: '10',
     eventList: [],
+
+    currentVersion: '',
+    remoteVersion: '',
+    loadingCurrentVersion: false,
+    loadingRemoteVersion: false,
+
+    otaProgress: 0,
+    otaSent: 0,
+    otaTotal: 0,
+    otaRunning: false,
   });
+
 
   store = useContext(storeContext) as PropsStore;
 

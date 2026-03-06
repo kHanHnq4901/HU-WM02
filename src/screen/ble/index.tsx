@@ -104,40 +104,6 @@ export default function BLEScreen() {
 
   return (
     <LinearGradient colors={['#f9fbfd', '#eef3f7']} style={{ flex: 1 }}>
-      <View style={styles.header}>
-        <Text style={{ fontSize: 18 }}>📡</Text>
-        <Text style={styles.headerTitle}>Quản lý thiết bị BLE</Text>
-        {hookProps.state.ble.isScan && (
-          <ActivityIndicator size="small" color="#007bff" />
-        )}
-      </View>
-
-      <View style={styles.dashboard}>
-        <View style={[styles.card, { backgroundColor: '#4CAF50' }]}>
-          <Text style={{ fontSize: 20 }}>🔗</Text>
-          <Text style={styles.cardValue}>
-            {store.state.hhu.connect === 'CONNECTED' ? 1 : 0}
-          </Text>
-          <Text style={styles.cardLabel}>Đang kết nối</Text>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: '#007bff' }]}>
-          <Text style={{ fontSize: 20 }}>📡</Text>
-          <Text style={styles.cardValue}>
-            {hookProps.state.ble.listNewDevice.length}
-          </Text>
-          <Text style={styles.cardLabel}>Mới quét</Text>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: '#ff9800' }]}>
-          <Text style={{ fontSize: 20 }}>🕘</Text>
-          <Text style={styles.cardValue}>
-            {hookProps.state.ble.listBondedDevice.length}
-          </Text>
-          <Text style={styles.cardLabel}>Đã từng</Text>
-        </View>
-      </View>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 12, paddingBottom: 100 }}

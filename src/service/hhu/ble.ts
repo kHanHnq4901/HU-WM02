@@ -3,7 +3,8 @@ import BleManager from 'react-native-ble-manager';
 
 import { Buffer } from 'buffer'; // cần import Buffer
 import { crc16 } from '../../util/crc16';
-import { sleep } from '../../util';
+import { showToast, sleep } from '../../util';
+import { store } from '../../screen/overview/controller';
 const TAG = 'Ble.ts:';
 
 let service: string ;
@@ -206,3 +207,65 @@ export async function sendLoraCommand(
     buffer.toString("base64")
   );
 }
+// export const reconnectLastDevice = async () => {
+//   try {
+    
+//     const lastDeviceId = store.state.appSetting.hhu?.lastConnectedId;
+//     const lastDeviceName = store.state.appSetting.hhu?.lastConnectedName || 'thiết bị đã lưu';
+
+//     if (!lastDeviceId) {
+//       showToast('Chưa có thiết bị nào được lưu trước đó. Vui lòng quét và kết nối.');
+//       return;
+//     }
+
+//     console.log(TAG, '🔄 Đang thử kết nối lại với thiết bị cũ:', lastDeviceId);
+//     showToast(`Đang kết nối lại với ${lastDeviceName}...`);
+
+//     store.setState(state => {
+//       state.hhu.connect = 'CONNECTING';
+//       state.hhu.name = lastDeviceName;
+//       return { ...state };
+//     });
+
+//     await BleManager.connect(lastDeviceId);
+//     console.log(TAG, '✅ Đã kết nối BLE (hệ điều hành)');
+
+//     console.log(TAG, 'Retrieving services...');
+//     await BleManager.retrieveServices(lastDeviceId);
+
+//     const foundService = DEVICE_SERVICE_UUID;
+//     const foundChar = DEVICE_CHAR_UUID;
+//     console.log(TAG, `Service: ${foundService}, Char: ${foundChar}`);
+    
+//     await BleManager.startNotification(lastDeviceId, foundService, foundChar);
+//     console.log(TAG, '✅ Notification started');
+
+//     if (onDidUpdateValue) onDidUpdateValue.remove();
+//     onDidUpdateValue = bleManagerEmitter.addListener(
+//       'BleManagerDidUpdateValueForCharacteristic',
+//       (data) => {
+//         onBleData(data);
+//       }
+//     );
+
+//     showToast('Kết nối thành công');
+//     store.setState(state => {
+//       state.hhu.idConnected = lastDeviceId;
+//       state.hhu.connect = 'CONNECTED';
+//       state.hhu.rssi = 0;
+//       state.hhu.serviceUUID = foundService;
+//       state.hhu.characteristicUUID = foundChar;
+//       return { ...state };
+//     });
+
+//   } catch (err: any) {
+//     console.log(TAG, '❌ Lỗi khi kích hoạt kết nối lại:', err);
+//     showToast('Kết nối thất bại. Thiết bị có thể ở xa hoặc chưa bật nguồn.');
+    
+//     store.setState(state => {
+//       state.hhu.idConnected = '';
+//       state.hhu.connect = 'DISCONNECTED';
+//       return { ...state };
+//     });
+//   }
+// };

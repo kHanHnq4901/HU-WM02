@@ -6,7 +6,7 @@ import BleManager from 'react-native-ble-manager';
 import * as Ble from '../../util/ble';
 import { showAlert, sleep } from '../../util';
 import { hookProps, setStatus, store } from './controller';
-import { EventSubscription, NativeEventEmitter, NativeModules, Platform } from 'react-native';
+import { Alert, EventSubscription, NativeEventEmitter, NativeModules, Platform } from 'react-native';
 
 const TAG = 'handleBtn Ble:';
 const bleManagerEmitter = new NativeEventEmitter(NativeModules.BleManager);
@@ -54,14 +54,20 @@ export const connectHandle = async (id: string, name: string) => {
     setStatus('Kết nối thành công');
     BleFunc_StartNotification(id);
 
+    // 🔥 CẬP NHẬT THÊM idConnectLast VÀ nameConnectLast VÀO STORE
     store?.setState(state => {
       state.hhu.idConnected = id;
       state.hhu.connect = 'CONNECTED';
       state.hhu.rssi = 0;
+      
+      // Lưu lại thiết bị cuối cùng kết nối thành công
+      state.hhu.idConnectLast = id;
+      state.hhu.nameConnectLast = name || state.hhu.nameConnectLast;
+
       return { ...state };
     });
 
-    // Lưu device
+    // Lưu device vào Local Storage (AsyncStorage) nếu cần dùng cho lần mở app sau
     BleFunc_SaveStorage(id);
 
     // Xóa thiết bị vừa kết nối khỏi list scan
@@ -74,6 +80,10 @@ export const connectHandle = async (id: string, name: string) => {
     setStatus('Kết nối thất bại: ' + err.message);
   }
 };
+
+
+// 🔥 HÀM MỚI: TỰ ĐỘNG KẾT NỐI LẠI VỚI THIẾT BỊ GẦN NHẤT
+
 
 // Hàm scan (ưu tiên lấy tên từ advertising.localName)
 export const onScanPress = async () => {

@@ -1,26 +1,26 @@
 import { store } from "../screen/ble/controller";
 
 export const sbox = Uint8Array.from([
-   0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,     
-    0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,      
-    0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,      
-    0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75,      
-    0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84,     
-    0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf,      
-    0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8,      
-    0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2,      
-    0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,      
-    0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,      
-    0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,      
-    0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,      
-    0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,      
-    0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,      
-    0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,      
-    0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16,   
+    0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
+    0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
+    0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
+    0x04, 0xc7, 0x23, 0xc3, 0x18, 0x96, 0x05, 0x9a, 0x07, 0x12, 0x80, 0xe2, 0xeb, 0x27, 0xb2, 0x75,
+    0x09, 0x83, 0x2c, 0x1a, 0x1b, 0x6e, 0x5a, 0xa0, 0x52, 0x3b, 0xd6, 0xb3, 0x29, 0xe3, 0x2f, 0x84,
+    0x53, 0xd1, 0x00, 0xed, 0x20, 0xfc, 0xb1, 0x5b, 0x6a, 0xcb, 0xbe, 0x39, 0x4a, 0x4c, 0x58, 0xcf,
+    0xd0, 0xef, 0xaa, 0xfb, 0x43, 0x4d, 0x33, 0x85, 0x45, 0xf9, 0x02, 0x7f, 0x50, 0x3c, 0x9f, 0xa8,
+    0x51, 0xa3, 0x40, 0x8f, 0x92, 0x9d, 0x38, 0xf5, 0xbc, 0xb6, 0xda, 0x21, 0x10, 0xff, 0xf3, 0xd2,
+    0xcd, 0x0c, 0x13, 0xec, 0x5f, 0x97, 0x44, 0x17, 0xc4, 0xa7, 0x7e, 0x3d, 0x64, 0x5d, 0x19, 0x73,
+    0x60, 0x81, 0x4f, 0xdc, 0x22, 0x2a, 0x90, 0x88, 0x46, 0xee, 0xb8, 0x14, 0xde, 0x5e, 0x0b, 0xdb,
+    0xe0, 0x32, 0x3a, 0x0a, 0x49, 0x06, 0x24, 0x5c, 0xc2, 0xd3, 0xac, 0x62, 0x91, 0x95, 0xe4, 0x79,
+    0xe7, 0xc8, 0x37, 0x6d, 0x8d, 0xd5, 0x4e, 0xa9, 0x6c, 0x56, 0xf4, 0xea, 0x65, 0x7a, 0xae, 0x08,
+    0xba, 0x78, 0x25, 0x2e, 0x1c, 0xa6, 0xb4, 0xc6, 0xe8, 0xdd, 0x74, 0x1f, 0x4b, 0xbd, 0x8b, 0x8a,
+    0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e,
+    0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf,
+    0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 ]);
 
 export const rsbox = Uint8Array.from([
-  0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39,
+    0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39,
     0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb, 0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2,
     0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e, 0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24, 0xb2, 0x76,
     0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25, 0x72, 0xf8, 0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xd4, 0xa4, 0x5c, 0xcc,
@@ -37,232 +37,251 @@ export const rsbox = Uint8Array.from([
 ]);
 
 export const Rcon = Uint8Array.from([
-  0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
 ]);
 
 export const AES_KEY_WM02A = Uint8Array.from([
-  0x2c,0x7f,0x13,0x14,0x26,0xae,0xd2,0xa6,
-  0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c
+    0x2c, 0x7f, 0x13, 0x14, 0x26, 0xae, 0xd2, 0xa6,
+    0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
 ]);
 
 export const AES_KEY_WM02 = Uint8Array.from([
-  0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
-  0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
+    0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+    0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
 ]);
 
-// ----------------- HELPER FUNCTIONS -----------------------
-export function gmul2(x: number) {
-  return ((x << 1) ^ ((x & 0x80) ? 0x1b : 0)) & 0xff;
-}
 
-function mul(a: number, b: number): number {
-  let res = 0;
-  let aa = a & 0xff;
-  let bb = b & 0xff;
-  while (bb > 0) {
-    if (bb & 1) res ^= aa;
-    aa = aa << 1;
-    if (aa & 0x100) aa ^= 0x11b; // x^8 + x^4 + x^3 + x + 1
-    aa &= 0xff;
-    bb >>= 1;
-  }
-  return res & 0xff;
-}
+function gmul2(value: number): number {
+    const temp = (value >> 7) & 0xFF; 
+    let res = (value << 1) & 0xFF;
 
-// ----------------- KEY EXPANSION -----------------------
-export function keyExpansionWM02(key: Uint8Array) {
-  const roundKeys: Uint8Array[] = [];
-  let tempKey = Uint8Array.from(key);
-
-  for (let r = 0; r < 11; r++) {
-    roundKeys.push(Uint8Array.from(tempKey));
-
-    if (r === 10) break;
-
-    const t = Uint8Array.from(tempKey);
-
-    tempKey[0] = sbox[t[13]] ^ t[0] ^ Rcon[r];
-    tempKey[1] = sbox[t[14]] ^ t[1];
-    tempKey[2] = sbox[t[15]] ^ t[2];
-    tempKey[3] = sbox[t[12]] ^ t[3];
-
-    for (let i = 4; i < 16; i++) {
-      tempKey[i] = tempKey[i - 4] ^ t[i];
+    if ((value & 0x80) !== 0) {
+        res ^= 0x1b;
     }
-  }
-
-  return roundKeys;
+    return res;
 }
 
-// ----------------- SHIFT ROWS -----------------------
-function shiftRows(state: Uint8Array) {
-  const s = Uint8Array.from(state);
+/**
+ * Direct port of C# `aes_enc_dec` function.
+ * Note: The `key` array is modified in place, so we must pass a copy.
+ * @param state 16-byte block
+ * @param key 16-byte key (will be mutated!)
+ * @param dir 0 for Encrypt, 1 for Decrypt
+ */
+function aes_enc_dec(state: Uint8Array, key: Uint8Array, dir: number): Uint8Array {
+    let buf1 = 0, buf2 = 0, buf3 = 0, buf4 = 0;
+    let round = 0, i = 0;
 
-  state[1] = s[5];  state[5] = s[9];  state[9]  = s[13]; state[13] = s[1];
-  state[2] = s[10]; state[6] = s[14]; state[10] = s[2];  state[14] = s[6];
-  state[3] = s[15]; state[7] = s[3];  state[11] = s[7];  state[15] = s[11];
-}
+    // In case of decryption
+    if (dir !== 0) {
+        // compute the last key of encryption before starting the decryption
+        for (round = 0; round < 10; round++) {
+            // key schedule
+            key[0] = (sbox[key[13]] ^ key[0] ^ Rcon[round]) & 0xFF;
+            key[1] = (sbox[key[14]] ^ key[1]) & 0xFF;
+            key[2] = (sbox[key[15]] ^ key[2]) & 0xFF;
+            key[3] = (sbox[key[12]] ^ key[3]) & 0xFF;
 
-function invShiftRows(state: Uint8Array) {
-  const s = Uint8Array.from(state);
+            for (i = 4; i < 16; i++) {
+                key[i] = (key[i] ^ key[i - 4]) & 0xFF;
+            }
+        }
 
-  state[1] = s[13]; state[5] = s[1];  state[9]  = s[5];  state[13] = s[9];
-  state[2] = s[10]; state[6] = s[14]; state[10] = s[2];  state[14] = s[6];
-  state[3] = s[7];  state[7] = s[11]; state[11] = s[15]; state[15] = s[3];
-}
-
-// ----------------- MIX COLUMNS -----------------------
-function mixColumns(state: Uint8Array) {
-  for (let c = 0; c < 4; c++) {
-    let i = c * 4;
-    let a = state.slice(i, i + 4);
-
-    const t = a[0] ^ a[1] ^ a[2] ^ a[3];
-
-    let u = a[0];
-    state[i] ^= gmul2(a[0] ^ a[1]) ^ t;
-    state[i+1] ^= gmul2(a[1] ^ a[2]) ^ t;
-    state[i+2] ^= gmul2(a[2] ^ a[3]) ^ t;
-    state[i+3] ^= gmul2(a[3] ^ u) ^ t;
-  }
-}
-
-function invMixColumns(state: Uint8Array) {
-  for (let c = 0; c < 4; c++) {
-    const i = c * 4;
-    const a0 = state[i], a1 = state[i + 1], a2 = state[i + 2], a3 = state[i + 3];
-    state[i]     = mul(a0, 0x0e) ^ mul(a1, 0x0b) ^ mul(a2, 0x0d) ^ mul(a3, 0x09);
-    state[i + 1] = mul(a0, 0x09) ^ mul(a1, 0x0e) ^ mul(a2, 0x0b) ^ mul(a3, 0x0d);
-    state[i + 2] = mul(a0, 0x0d) ^ mul(a1, 0x09) ^ mul(a2, 0x0e) ^ mul(a3, 0x0b);
-    state[i + 3] = mul(a0, 0x0b) ^ mul(a1, 0x0d) ^ mul(a2, 0x09) ^ mul(a3, 0x0e);
-  }
-}
-
-// ----------------- AES ENCRYPT -----------------------
-export function aes128EncryptWM02(block: Uint8Array, key: Uint8Array) {
-  const roundKeys = keyExpansionWM02(key);
-  let state = Uint8Array.from(block);
-
-  // Round 0: AddRoundKey+SubBytes, ShiftRows, MixColumns
-  for (let i = 0; i < 16; i++) {
-    state[i] = sbox[state[i] ^ roundKeys[0][i]];
-  }
-  shiftRows(state);
-  mixColumns(state);
-
-  // Rounds 1–8: AddRoundKey+SubBytes, ShiftRows, MixColumns
-  for (let r = 1; r < 9; r++) {
-    for (let i = 0; i < 16; i++) {
-      state[i] = sbox[state[i] ^ roundKeys[r][i]];
+        // first Addroundkey
+        for (i = 0; i < 16; i++) {
+            state[i] = (state[i] ^ key[i]) & 0xFF;
+        }
     }
-    shiftRows(state);
-    mixColumns(state);
-  }
 
-  // Round 9: AddRoundKey+SubBytes, ShiftRows (no MixColumns)
-  for (let i = 0; i < 16; i++) {
-    state[i] = sbox[state[i] ^ roundKeys[9][i]];
-  }
-  shiftRows(state);
+    // main loop
+    for (round = 0; round < 10; round++) {
+        if (dir !== 0) {
+            // DEC: Inverse key schedule
+            for (i = 15; i > 3; --i) {
+                key[i] = (key[i] ^ key[i - 4]) & 0xFF;
+            }
+            key[0] = (sbox[key[13]] ^ key[0] ^ Rcon[9 - round]) & 0xFF;
+            key[1] = (sbox[key[14]] ^ key[1]) & 0xFF;
+            key[2] = (sbox[key[15]] ^ key[2]) & 0xFF;
+            key[3] = (sbox[key[12]] ^ key[3]) & 0xFF;
+        } else {
+            // ENC: SubBytes + AddRoundKey (combined step for initial part of loop)
+            for (i = 0; i < 16; i++) {
+                // with shiftrow i+5 mod 16 (comment from C#, handled below)
+                state[i] = sbox[state[i] ^ key[i]];
+            }
 
-  // Final: AddRoundKey
-  for (let i = 0; i < 16; i++) {
-    state[i] ^= roundKeys[10][i];
-  }
+            // ShiftRows
+            buf1 = state[1];
+            state[1] = state[5];
+            state[5] = state[9];
+            state[9] = state[13];
+            state[13] = buf1;
 
-  return state;
-}
+            buf1 = state[2];
+            buf2 = state[6];
+            state[2] = state[10];
+            state[6] = state[14];
+            state[10] = buf1;
+            state[14] = buf2;
 
-// ----------------- AES DECRYPT -----------------------
-export function aes128DecryptWM02(block: Uint8Array, key: Uint8Array) {
-  const roundKeys = keyExpansionWM02(key);
-  let state = Uint8Array.from(block);
+            buf1 = state[15];
+            state[15] = state[11];
+            state[11] = state[7];
+            state[7] = state[3];
+            state[3] = buf1;
+        }
 
-  // Round 10
-  for (let i = 0; i < 16; i++) {
-    state[i] ^= roundKeys[10][i];
-  }
+        // MixColumns - InvMixColumns
+        if (((round > 0) && (dir !== 0)) || ((round < 9) && (dir === 0))) {
+            for (i = 0; i < 4; i++) {
+                buf4 = (i << 2); // i * 4
+                if (dir !== 0) {
+                    // precompute for decryption
+                    buf1 = gmul2(gmul2((state[buf4] ^ state[buf4 + 2]) & 0xFF));
+                    buf2 = gmul2(gmul2((state[buf4 + 1] ^ state[buf4 + 3]) & 0xFF));
+                    state[buf4] ^= buf1;
+                    state[buf4 + 1] ^= buf2;
+                    state[buf4 + 2] ^= buf1;
+                    state[buf4 + 3] ^= buf2;
+                }
 
-  // Rounds 9 → 1
-  for (let r = 9; r >= 1; r--) {
-    invShiftRows(state);
-    for (let i = 0; i < 16; i++) {
-      state[i] = rsbox[state[i]] ^ roundKeys[r][i];
+                // in all cases
+                buf1 = (state[buf4] ^ state[buf4 + 1] ^ state[buf4 + 2] ^ state[buf4 + 3]) & 0xFF;
+                buf2 = state[buf4];
+                buf3 = (state[buf4] ^ state[buf4 + 1]) & 0xFF;
+                buf3 = gmul2(buf3);
+                state[buf4] = (state[buf4] ^ buf3 ^ buf1) & 0xFF;
+
+                buf3 = (state[buf4 + 1] ^ state[buf4 + 2]) & 0xFF;
+                buf3 = gmul2(buf3);
+                state[buf4 + 1] = (state[buf4 + 1] ^ buf3 ^ buf1) & 0xFF;
+
+                buf3 = (state[buf4 + 2] ^ state[buf4 + 3]) & 0xFF;
+                buf3 = gmul2(buf3);
+                state[buf4 + 2] = (state[buf4 + 2] ^ buf3 ^ buf1) & 0xFF;
+
+                buf3 = (state[buf4 + 3] ^ buf2) & 0xFF;
+                buf3 = gmul2(buf3);
+                state[buf4 + 3] = (state[buf4 + 3] ^ buf3 ^ buf1) & 0xFF;
+            }
+        }
+
+        if (dir !== 0) {
+            // DEC: InvShiftRows
+            // Row 1
+            buf1 = state[13];
+            state[13] = state[9];
+            state[9] = state[5];
+            state[5] = state[1];
+            state[1] = buf1;
+            // Row 2
+            buf1 = state[10];
+            buf2 = state[14];
+            state[10] = state[2];
+            state[14] = state[6];
+            state[2] = buf1;
+            state[6] = buf2;
+            // Row 3
+            buf1 = state[3];
+            state[3] = state[7];
+            state[7] = state[11];
+            state[11] = state[15];
+            state[15] = buf1;
+
+            for (i = 0; i < 16; i++) {
+                state[i] = (rsbox[state[i]] ^ key[i]) & 0xFF;
+            }
+        } else {
+            key[0] = (sbox[key[13]] ^ key[0] ^ Rcon[round]) & 0xFF;
+            key[1] = (sbox[key[14]] ^ key[1]) & 0xFF;
+            key[2] = (sbox[key[15]] ^ key[2]) & 0xFF;
+            key[3] = (sbox[key[12]] ^ key[3]) & 0xFF;
+
+            for (i = 4; i < 16; i++) {
+                key[i] = (key[i] ^ key[i - 4]) & 0xFF;
+            }
+        }
     }
-    invMixColumns(state);
-  }
 
-  // Final round (round 0) ❗ KHÔNG InvMixColumns
-  invShiftRows(state);
-  for (let i = 0; i < 16; i++) {
-    state[i] = rsbox[state[i]] ^ roundKeys[0][i];
-  }
+    if (dir === 0) {
+        for (i = 0; i < 16; i++) {
+            state[i] = (state[i] ^ key[i]) & 0xFF;
+        }
+    }
 
-  return state;
+    return state;
 }
 
 
-// ----------------- BLOCK ENCRYPTION/DECRYPTION -----------------------
-export function aes128Encrypt(data: Uint8Array) {
-  // 🔑 Chọn key theo loại WM
-  const key =
-    store.state.appSetting.setting.typeWM === 'wm02a'
-      ? AES_KEY_WM02A
-      : AES_KEY_WM02;
+export function aes128Encrypt(data: Uint8Array): Uint8Array {
+    const masterKey =
+        store.state.appSetting.setting.typeWM === 'wm02a'
+            ? AES_KEY_WM02A
+            : AES_KEY_WM02;
 
-  // 🔹 Padding giống C#
-  const padded =
-    data.length < 16
-      ? Uint8Array.from([...data, ...new Uint8Array(16 - data.length)])
-      : data;
+    let newData: Uint8Array;
+    if (data.length < 16) {
+        newData = new Uint8Array(16);
+        newData.set(data);
+    } else {
+        newData = data;
+    }
 
-  const result = new Uint8Array(padded.length);
+    const iLen = newData.length;
+    const numBlocks = Math.floor(iLen / 16);
+    const bResult = new Uint8Array(iLen);
 
-  // 🔹 Encrypt từng block 16 byte (ECB)
-  for (let i = 0; i < padded.length; i += 16) {
-    result.set(
-      aes128EncryptWM02(padded.slice(i, i + 16), key),
-      i
-    );
-  }
+    let iIndex = 0;
 
-  return result;
+    for (let i = 0; i < numBlocks; i++) {
+        const bDataTemp = newData.slice(i * 16, i * 16 + 16);
+
+        const keyCopy = Uint8Array.from(masterKey);
+
+        aes_enc_dec(bDataTemp, keyCopy, 0);
+
+        bResult.set(bDataTemp, iIndex);
+        iIndex += 16;
+    }
+
+    if (iLen % 16 !== 0) {
+        const remaining = iLen % 16;
+        for (let j = 0; j < remaining; j++) {
+            bResult[iIndex + j] = newData[numBlocks * 16 + j];
+        }
+    }
+
+    return bResult;
 }
-
 
 export function aes128Decrypt(data: Uint8Array): Uint8Array {
-  // 🔑 Chọn key theo loại WM
-  const key =
-    store.state.appSetting.setting.typeWM === 'wm02a'
-      ? AES_KEY_WM02A
-      : AES_KEY_WM02;
 
-  const result = new Uint8Array(data.length);
+    const masterKey =
+        store.state.appSetting.setting.typeWM === 'wm02a'
+            ? AES_KEY_WM02A
+            : AES_KEY_WM02;
 
-  const totalDecryptLen = Math.floor(data.length / 16) * 16;
+    const iLen = data.length;
+    const bResult = new Uint8Array(iLen);
+    const iSumDecrypt = Math.floor(iLen / 16) * 16;
 
-  let outIndex = 0;
-  const block = new Uint8Array(16);
+    let iIndex = 0;
 
-  // 🔹 Decrypt từng block 16 byte (ECB)
-  for (let i = 0; i < totalDecryptLen; i += 16) {
-    block.set(data.subarray(i, i + 16));
+    for (let i = 0; i < iSumDecrypt; i += 16) {
+        const bDataTemp = data.slice(i, i + 16);
 
-    const dec = aes128DecryptWM02(block, key);
+        const keyCopy = Uint8Array.from(masterKey);
 
-    result.set(dec, outIndex);
-    outIndex += 16;
-  }
+        aes_enc_dec(bDataTemp, keyCopy, 1);
 
-  // 🔹 Copy phần dư (giống C#)
-  for (let i = totalDecryptLen; i < data.length; i++) {
-    result[i] = data[i];
-  }
+        bResult.set(bDataTemp, iIndex);
+        iIndex += 16;
+    }
 
-  return result;
+    for (let i = iSumDecrypt; i < iLen; i++) {
+        bResult[i] = data[i];
+    }
+
+    return bResult;
 }
-
-
-
-
-

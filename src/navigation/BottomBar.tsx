@@ -6,8 +6,7 @@ import OverviewScreen from '../screen/overview';
 import DataScreen from '../screen/data';
 import EventScreen from '../screen/event';
 import PushStatusScreen from '../screen/pushstatus';
-import BLEScreen from '../screen/ble';
-import SettingsScreen from '../screen/settings'; // ✅ THÊM
+import SettingsScreen from '../screen/settings';
 import { storeContext } from '../store';
 
 const Tab = createBottomTabNavigator();
@@ -30,10 +29,8 @@ export default function BottomBar() {
             iconText = '⚠️';
           } else if (route.name === 'Trạng thái đẩy') {
             iconText = '📤';
-          } else if (route.name === 'HU') {
-            iconText = '📶';
           } else if (route.name === 'Cài đặt') {
-            iconText = '⚙️'; // ✅ ICON SETTING
+            iconText = '⚙️'; 
           } else {
             iconText = '○';
           }
@@ -56,7 +53,6 @@ export default function BottomBar() {
       <Tab.Screen name="Dữ liệu" component={DataScreen} />
       <Tab.Screen name="Sự kiện" component={EventScreen} />
       <Tab.Screen name="Trạng thái đẩy" component={PushStatusScreen} />
-      <Tab.Screen name="HU" component={BLEScreen} />
       <Tab.Screen name="Cài đặt" component={SettingsScreen} />
     </Tab.Navigator>
   );
