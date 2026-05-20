@@ -1,15 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Switch,
-  ActivityIndicator,
-  Platform,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  ScrollView, KeyboardAvoidingView, ActivityIndicator, Platform,
 } from 'react-native';
 import { requestBlePermission } from '../../util/ble';
 import { formatRTC, GetHookProps, store } from './controller';
@@ -17,30 +9,52 @@ import { Read, Write } from './handleButton';
 import { Radio } from '../../component/radio';
 import SystemHeader from '../../component/SystemHeader';
 
-/* ============================================================ */
-/*  SUB-COMPONENTS                                               */
-/* ============================================================ */
+/* ---- chip definitions ---- */
+const CHIPS = [
+  { label: 'Serial Module',    chkKey: 'chkModuleNo' },
+  { label: 'Seri đồng hồ',    chkKey: 'chkMeterNo' },
+  { label: 'Loại Module',      chkKey: 'chkModuleType' },
+  { label: 'QCCID',            chkKey: 'chkQCCID' },
+  { label: 'Thời gian RTC',    chkKey: 'chkRTC' },
+  { label: 'Múi giờ',          chkKey: 'chkTimeZone' },
+  { label: 'Chỉ số ĐH',        chkKey: 'chkImpData' },
+  { label: 'Lưu lượng Q3',     chkKey: 'chkQ3' },
+  { label: 'Số lít / vòng',    chkKey: 'chkLPR' },
+  { label: 'IP : Cổng',        chkKey: 'chkIPPORT' },
+  { label: 'PT gửi DL',        chkKey: 'chkPushMethod' },
+  { label: 'Chu kỳ gửi',       chkKey: 'chkPushPeriod' },
+  { label: 'Gửi lúc 1',        chkKey: 'chkPushTime1' },
+  { label: 'Gửi lúc 2',        chkKey: 'chkPushTime2' },
+  { label: 'PT gửi SK',        chkKey: 'chkPushEventMethod' },
+  { label: 'Ngẫu nhiên',       chkKey: 'chkRandomMin' },
+  { label: 'Chu kỳ lưu',       chkKey: 'chkLatchPeriod' },
+  { label: 'Cấu hình SK',      chkKey: 'chkEventConfig' },
+  { label: 'Kích hoạt TB',     chkKey: 'chkEnableDevice' },
+  { label: 'Firmware',         chkKey: 'chkFirmwareVer' },
+  { label: 'Boot ver',         chkKey: 'chkBootVer' },
+  { label: 'Điện áp (V)',      chkKey: 'chkVoltage' },
+  { label: 'Pin còn lại',      chkKey: 'chkRemainBattery' },
+  { label: 'Dung lượng pin',   chkKey: 'chkBatteryCapacity' },
+  { label: 'Tr.thái reset',    chkKey: 'chkTemp' },
+  { label: 'Số lần reset',     chkKey: 'chkResetCount' },
+] as const;
 
-const SectionHeader = ({ title, color }: { title: string; color: string }) => (
-  <View style={[styles.sectionHeader, { backgroundColor: color }]}>
-    <Text style={styles.sectionHeaderText}>{title}</Text>
-  </View>
-);
+const ALL_CHK = CHIPS.map(c => c.chkKey as string);
 
-const Divider = () => <View style={styles.divider} />;
+const CMDS = [
+  { label: 'Xóa dữ liệu', chkKey: 'chkClearData' },
+  { label: 'Gửi ngay',    chkKey: 'chkPushData' },
+  { label: 'Reset Module', chkKey: 'chkResetModule' },
+] as const;
 
-/* ============================================================ */
-/*  MAIN SCREEN                                                  */
 /* ============================================================ */
 
 export default function Overview() {
   useEffect(() => { requestBlePermission(); }, []);
-
   const { state, setState } = GetHookProps();
   const connected = store?.state?.hhu?.connect === 'CONNECTED';
   const busy = state.isReading || state.isWriting;
 
-  /* ---- RTC live timer ---- */
   const rtcTimer = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (state.chkRTC && state.chkRTCNow) {
@@ -48,238 +62,122 @@ export default function Overview() {
         setState(p => ({ ...p, inputRTC: formatRTC(new Date()) }));
       }, 1000);
     }
-    return () => {
-      if (rtcTimer.current) { clearInterval(rtcTimer.current); rtcTimer.current = null; }
-    };
+    return () => { if (rtcTimer.current) { clearInterval(rtcTimer.current); rtcTimer.current = null; } };
   }, [state.chkRTC, state.chkRTCNow]);
 
-  /* ---- Auto total ---- */
   useEffect(() => {
     const imp = Number(state.inputImpData || 0);
     const exp = Number(state.inputExpData || 0);
     setState(p => ({ ...p, inputTotalData: (imp - exp).toString() }));
   }, [state.inputImpData, state.inputExpData]);
 
-  /* ---- Helpers ---- */
   const toggle = (key: any) => setState(p => ({ ...p, [key]: !p[key] }));
-  const set = (key: any, v: string) => setState(p => ({ ...p, [key]: v }));
+  const set    = (key: any, v: string) => setState(p => ({ ...p, [key]: v }));
+  const selectAll   = () => setState(p => { const n = {...p}; ALL_CHK.forEach(k => (n as any)[k] = true);  return n; });
+  const unselectAll = () => setState(p => { const n = {...p}; ALL_CHK.forEach(k => (n as any)[k] = false); return n; });
 
-  const ALL_CHK_KEYS = [
-    'chkModuleNo','chkMeterNo','chkModuleType','chkQCCID',
-    'chkRTC','chkTimeZone',
-    'chkImpData','chkQ3','chkLPR',
-    'chkIPPORT','chkPushMethod','chkPushPeriod','chkPushTime1','chkPushTime2','chkPushEventMethod','chkRandomMin',
-    'chkLatchPeriod','chkEventConfig','chkEnableDevice',
-    'chkFirmwareVer','chkBootVer','chkVoltage','chkRemainBattery','chkBatteryCapacity',
-    'chkTemp','chkResetCount',
-  ];
+  /* ---- table rows (built from selected chips) ---- */
+  const tableRows: React.ReactNode[] = [];
 
-  const selectAll   = () => setState(p => { const n = {...p}; ALL_CHK_KEYS.forEach(k => (n as any)[k] = true);  return n; });
-  const unselectAll = () => setState(p => { const n = {...p}; ALL_CHK_KEYS.forEach(k => (n as any)[k] = false); return n; });
+  const TR = (key: string, label: string, inputKey: any, numeric = false, editable = true) => (
+    <View key={key} style={styles.tr}>
+      <Text style={styles.trLabel}>{label}</Text>
+      <TextInput
+        style={[styles.trInput, !editable && styles.trReadonly]}
+        value={String((state as any)[inputKey] ?? '')}
+        editable={editable}
+        onChangeText={v => set(inputKey, v)}
+        keyboardType={numeric ? 'numeric' : 'default'}
+        placeholder="—"
+        placeholderTextColor="#ccc"
+      />
+    </View>
+  );
 
-  /* ---- Generic field card ---- */
-  const Field = ({
-    label, chkKey, inputKey, numeric, editable,
-  }: {
-    label: string;
-    chkKey: keyof typeof state;
-    inputKey: keyof typeof state;
-    numeric?: boolean;
-    editable?: boolean;
-  }) => {
-    const on = !!state[chkKey];
-    const isEditable = editable !== undefined ? editable : true;
-    return (
-      <View style={styles.fieldCard}>
-        <TouchableOpacity
-          style={styles.fieldRow}
-          onPress={() => toggle(chkKey)}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.fieldLabel, !on && styles.fieldLabelOff]}>{label}</Text>
-          <Switch
-            value={on}
-            onValueChange={() => toggle(chkKey)}
-            trackColor={{ false: '#ddd', true: '#a5d6a7' }}
-            thumbColor={on ? '#388E3C' : '#bbb'}
-          />
-        </TouchableOpacity>
-        {on && (
-          <>
-            <Divider />
-            <TextInput
-              value={String(state[inputKey] ?? '')}
-              editable={isEditable}
-              onChangeText={v => set(inputKey, v)}
-              keyboardType={numeric ? 'numeric' : 'default'}
-              style={[styles.fieldInput, !isEditable && styles.fieldInputReadonly]}
-              placeholder="—"
-            />
-          </>
-        )}
-      </View>
-    );
-  };
-
-  /* ---- RTC field (special) ---- */
-  const RtcField = () => {
-    const on = state.chkRTC;
-    return (
-      <View style={styles.fieldCard}>
-        <TouchableOpacity style={styles.fieldRow} onPress={() => toggle('chkRTC')} activeOpacity={0.7}>
-          <Text style={[styles.fieldLabel, !on && styles.fieldLabelOff]}>Thời gian RTC</Text>
-          <Switch
-            value={on}
-            onValueChange={() => toggle('chkRTC')}
-            trackColor={{ false: '#ddd', true: '#a5d6a7' }}
-            thumbColor={on ? '#388E3C' : '#bbb'}
-          />
-        </TouchableOpacity>
-        {on && (
-          <>
-            <Divider />
-            <TextInput
-              value={state.inputRTC}
-              editable={!state.chkRTCNow}
-              onChangeText={v => set('inputRTC', v)}
-              style={[styles.fieldInput, state.chkRTCNow && styles.fieldInputReadonly]}
-              placeholder="YYYY-MM-DD HH:MM:SS"
-            />
-            <TouchableOpacity
-              style={styles.subToggleRow}
-              onPress={() => setState(p => ({ ...p, chkRTCNow: !p.chkRTCNow }))}
-              activeOpacity={0.7}
-            >
-              <Switch
-                value={state.chkRTCNow}
-                onValueChange={v => setState(p => ({ ...p, chkRTCNow: v }))}
-                trackColor={{ false: '#ddd', true: '#90caf9' }}
-                thumbColor={state.chkRTCNow ? '#1976D2' : '#bbb'}
-              />
-              <Text style={styles.subToggleLabel}>Lấy thời gian hiện tại</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    );
-  };
-
-  /* ---- ImpData field (special) ---- */
-  const ImpDataField = () => {
-    const on = state.chkImpData;
-    return (
-      <View style={styles.fieldCard}>
-        <TouchableOpacity style={styles.fieldRow} onPress={() => toggle('chkImpData')} activeOpacity={0.7}>
-          <Text style={[styles.fieldLabel, !on && styles.fieldLabelOff]}>Chỉ số đồng hồ</Text>
-          <Switch
-            value={on}
-            onValueChange={() => toggle('chkImpData')}
-            trackColor={{ false: '#ddd', true: '#a5d6a7' }}
-            thumbColor={on ? '#388E3C' : '#bbb'}
-          />
-        </TouchableOpacity>
-        {on && (
-          <>
-            <Divider />
-            <View style={styles.subInputGroup}>
-              <Text style={styles.subInputLabel}>Chỉ số xuôi (lít)</Text>
+  CHIPS.forEach(chip => {
+    if (!(state as any)[chip.chkKey]) return;
+    switch (chip.chkKey) {
+      case 'chkModuleNo':        tableRows.push(TR('mn',  'Serial Module',       'inputModuleNo')); break;
+      case 'chkMeterNo':         tableRows.push(TR('me',  'Số seri đồng hồ',     'inputMeterNo')); break;
+      case 'chkModuleType':      tableRows.push(TR('mt',  'Loại Module',         'inputModuleType')); break;
+      case 'chkQCCID':           tableRows.push(TR('qc',  'QCCID',               'inputQCCID')); break;
+      case 'chkRTC':
+        tableRows.push(
+          <View key="rtc" style={styles.tr}>
+            <Text style={styles.trLabel}>Thời gian RTC</Text>
+            <View style={styles.trRtc}>
               <TextInput
-                value={state.inputImpData}
-                editable={on}
-                onChangeText={v => setState(p => ({ ...p, inputImpData: v }))}
-                keyboardType="numeric"
-                style={styles.fieldInput}
-                placeholder="0"
+                style={[styles.trInput, { flex: 1, marginRight: 6 }, state.chkRTCNow && styles.trReadonly]}
+                value={state.inputRTC}
+                editable={!state.chkRTCNow}
+                onChangeText={v => set('inputRTC', v)}
+                placeholder="—"
+                placeholderTextColor="#ccc"
               />
+              <TouchableOpacity
+                style={[styles.nowBtn, state.chkRTCNow && styles.nowBtnOn]}
+                onPress={() => setState(p => ({ ...p, chkRTCNow: !p.chkRTCNow }))}
+              >
+                <Text style={[styles.nowBtnTxt, state.chkRTCNow && { color: '#fff' }]}>Now</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.subInputGroup}>
-              <Text style={styles.subInputLabel}>Chỉ số ngược (lít)</Text>
-              <TextInput
-                value={state.inputExpData}
-                editable={on}
-                onChangeText={v => setState(p => ({ ...p, inputExpData: v }))}
-                keyboardType="numeric"
-                style={styles.fieldInput}
-                placeholder="0"
-              />
+          </View>
+        ); break;
+      case 'chkTimeZone':        tableRows.push(TR('tz',  'Múi giờ (UTC+x)',     'inputTimeZone', true)); break;
+      case 'chkImpData':
+        tableRows.push(TR('xuoi', 'Chỉ số xuôi',        'inputImpData', true));
+        tableRows.push(TR('nguoc','Chỉ số ngược',        'inputExpData', true));
+        tableRows.push(TR('tong', 'Tổng (Xuôi − Ngược)', 'inputTotalData', false, false));
+        break;
+      case 'chkQ3':              tableRows.push(TR('q3',  'Lưu lượng Q3',        'inputQ3', true)); break;
+      case 'chkLPR':             tableRows.push(TR('lpr', 'Số lít / vòng',       'inputLPR', true)); break;
+      case 'chkIPPORT':          tableRows.push(TR('ip',  'Địa chỉ IP : Cổng',   'inputIPPORT')); break;
+      case 'chkPushMethod':
+        tableRows.push(
+          <View key="pm" style={styles.tr}>
+            <Text style={styles.trLabel}>Phương thức gửi DL</Text>
+            <View style={styles.trRadio}>
+              <Radio label="Chu kỳ"    checked={state.inputPushMethod === '1'} onPress={() => set('inputPushMethod', '1')} />
+              <Radio label="Thời điểm" checked={state.inputPushMethod === '2'} onPress={() => set('inputPushMethod', '2')} />
             </View>
-            <View style={styles.subInputGroup}>
-              <Text style={styles.subInputLabel}>Tổng (Xuôi − Ngược)</Text>
-              <TextInput
-                value={state.inputTotalData}
-                editable={false}
-                style={[styles.fieldInput, styles.fieldInputReadonly]}
-              />
+          </View>
+        ); break;
+      case 'chkPushPeriod':      tableRows.push(TR('pp',  'Chu kỳ gửi (phút)',   'inputPushPeriod', true)); break;
+      case 'chkPushTime1':       tableRows.push(TR('pt1', 'Thời điểm gửi 1',     'inputPushTime1')); break;
+      case 'chkPushTime2':       tableRows.push(TR('pt2', 'Thời điểm gửi 2',     'inputPushTime2')); break;
+      case 'chkPushEventMethod':
+        tableRows.push(
+          <View key="pem" style={styles.tr}>
+            <Text style={styles.trLabel}>Phương thức gửi SK</Text>
+            <View style={styles.trRadio}>
+              <Radio label="Chu kỳ"   checked={state.inputPushEventMethod == '0'} onPress={() => set('inputPushEventMethod', '0')} />
+              <Radio label="Tức thời" checked={state.inputPushEventMethod == '1'} onPress={() => set('inputPushEventMethod', '1')} />
             </View>
-          </>
-        )}
-      </View>
-    );
-  };
+          </View>
+        ); break;
+      case 'chkRandomMin':       tableRows.push(TR('rm',  'Ngẫu nhiên (phút)',   'inputRandomMin', true)); break;
+      case 'chkLatchPeriod':     tableRows.push(TR('lp',  'Chu kỳ lưu (phút)',   'inputLatchPeriod', true)); break;
+      case 'chkEventConfig':     tableRows.push(TR('ec',  'Cấu hình sự kiện',    'inputEventConfig')); break;
+      case 'chkEnableDevice':
+        tableRows.push(
+          <View key="ed" style={styles.tr}>
+            <Text style={styles.trLabel}>Kích hoạt thiết bị</Text>
+            <View style={styles.trRadio}>
+              <Radio label="Tắt" checked={state.inputEnableDevice === '0'} onPress={() => set('inputEnableDevice', '0')} />
+              <Radio label="Bật" checked={state.inputEnableDevice === '1'} onPress={() => set('inputEnableDevice', '1')} />
+            </View>
+          </View>
+        ); break;
+      case 'chkFirmwareVer':     tableRows.push(TR('fw',  'Firmware',            'inputFirmwareVer',     false, false)); break;
+      case 'chkBootVer':         tableRows.push(TR('bv',  'Boot ver',            'inputBootVer',         false, false)); break;
+      case 'chkVoltage':         tableRows.push(TR('vt',  'Điện áp (V)',         'inputVoltage',         false, false)); break;
+      case 'chkRemainBattery':   tableRows.push(TR('rb',  'Pin còn lại',         'inputRemainBattery',   false, false)); break;
+      case 'chkBatteryCapacity': tableRows.push(TR('bc',  'Dung lượng pin',      'inputBatteryCapacity', false, false)); break;
+      case 'chkTemp':            tableRows.push(TR('tmp', 'Trạng thái reset',    'inputTemp',            false, false)); break;
+      case 'chkResetCount':      tableRows.push(TR('rc',  'Số lần reset',        'inputResetCount',      false, false)); break;
+    }
+  });
 
-  /* ---- Radio field ---- */
-  const RadioField = ({
-    label, chkKey, options,
-  }: {
-    label: string;
-    chkKey: keyof typeof state;
-    options: { label: string; value: string; inputKey: keyof typeof state }[];
-  }) => {
-    const on = !!state[chkKey];
-    const inputKey = options[0].inputKey;
-    return (
-      <View style={styles.fieldCard}>
-        <TouchableOpacity style={styles.fieldRow} onPress={() => toggle(chkKey)} activeOpacity={0.7}>
-          <Text style={[styles.fieldLabel, !on && styles.fieldLabelOff]}>{label}</Text>
-          <Switch
-            value={on}
-            onValueChange={() => toggle(chkKey)}
-            trackColor={{ false: '#ddd', true: '#a5d6a7' }}
-            thumbColor={on ? '#388E3C' : '#bbb'}
-          />
-        </TouchableOpacity>
-        {on && (
-          <>
-            <Divider />
-            <View style={styles.radioGroup}>
-              {options.map(opt => (
-                <Radio
-                  key={opt.value}
-                  label={opt.label}
-                  checked={state[inputKey] == opt.value}
-                  disabled={!on}
-                  onPress={() => set(inputKey, opt.value)}
-                />
-              ))}
-            </View>
-          </>
-        )}
-      </View>
-    );
-  };
-
-  /* ---- Command toggle ---- */
-  const CmdField = ({ label, chkKey }: { label: string; chkKey: keyof typeof state }) => {
-    const on = !!state[chkKey];
-    return (
-      <TouchableOpacity
-        style={[styles.cmdCard, on && styles.cmdCardOn]}
-        onPress={() => toggle(chkKey)}
-        activeOpacity={0.7}
-      >
-        <Switch
-          value={on}
-          onValueChange={() => toggle(chkKey)}
-          trackColor={{ false: '#ddd', true: '#ef9a9a' }}
-          thumbColor={on ? '#D32F2F' : '#bbb'}
-        />
-        <Text style={[styles.cmdLabel, on && styles.cmdLabelOn]}>{label}</Text>
-      </TouchableOpacity>
-    );
-  };
-
-  /* ============================================================ */
-  /*  RENDER                                                       */
   /* ============================================================ */
 
   return (
@@ -287,110 +185,78 @@ export default function Overview() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <SystemHeader title="CẤU HÌNH" subTitle="ĐỌC / GHI CẤU HÌNH ĐỒNG HỒ" />
 
-        {/* SELECT ALL / UNSELECT ALL */}
+        {/* select all / none */}
         <View style={styles.selectRow}>
-          <TouchableOpacity
-            style={[styles.selectPill, styles.selectAllPill, busy && styles.pillDisabled]}
-            onPress={selectAll}
-            disabled={busy}
-          >
-            <Text style={styles.selectPillText}>✔ Chọn tất cả</Text>
+          <TouchableOpacity style={[styles.pill, { backgroundColor: '#1976D2' }]} onPress={selectAll} disabled={busy}>
+            <Text style={styles.pillTxt}>✔ Tất cả</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.selectPill, styles.unselectPill, busy && styles.pillDisabled]}
-            onPress={unselectAll}
-            disabled={busy}
-          >
-            <Text style={styles.selectPillText}>✖ Hủy tất cả</Text>
+          <TouchableOpacity style={[styles.pill, { backgroundColor: '#757575' }]} onPress={unselectAll} disabled={busy}>
+            <Text style={styles.pillTxt}>✖ Bỏ chọn</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ======= SECTION: NHẬN DẠNG ======= */}
-        <SectionHeader title="NHẬN DẠNG" color="#1976D2" />
-        <Field label="Serial Module"      chkKey="chkModuleNo"   inputKey="inputModuleNo" />
-        <Field label="Số seri đồng hồ"   chkKey="chkMeterNo"    inputKey="inputMeterNo" />
-        <Field label="Loại Module"        chkKey="chkModuleType" inputKey="inputModuleType" />
-        <Field label="QCCID"              chkKey="chkQCCID"      inputKey="inputQCCID" />
+        {/* checkbox chip grid */}
+        <View style={styles.chipGrid}>
+          {CHIPS.map(chip => {
+            const on = !!(state as any)[chip.chkKey];
+            return (
+              <TouchableOpacity
+                key={chip.chkKey}
+                style={[styles.chip, on && styles.chipOn]}
+                onPress={() => toggle(chip.chkKey)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.box, on && styles.boxOn]}>
+                  {on && <Text style={styles.tick}>✓</Text>}
+                </View>
+                <Text style={[styles.chipTxt, on && styles.chipTxtOn]} numberOfLines={2}>
+                  {chip.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-        {/* ======= SECTION: THỜI GIAN ======= */}
-        <SectionHeader title="THỜI GIAN" color="#00796B" />
-        <RtcField />
-        <Field label="Múi giờ (UTC+x)" chkKey="chkTimeZone" inputKey="inputTimeZone" numeric />
-
-        {/* ======= SECTION: CHỈ SỐ ĐO ĐẾM ======= */}
-        <SectionHeader title="CHỈ SỐ ĐO ĐẾM" color="#E65100" />
-        <ImpDataField />
-        <Field label="Lưu lượng Q3"    chkKey="chkQ3"  inputKey="inputQ3"  numeric />
-        <Field label="Số lít mỗi vòng" chkKey="chkLPR" inputKey="inputLPR" numeric />
-
-        {/* ======= SECTION: KẾT NỐI & GỬI DỮ LIỆU ======= */}
-        <SectionHeader title="KẾT NỐI & GỬI DỮ LIỆU" color="#6A1B9A" />
-        <Field label="Địa chỉ IP : Cổng" chkKey="chkIPPORT"     inputKey="inputIPPORT" />
-        <RadioField
-          label="Phương thức gửi dữ liệu"
-          chkKey="chkPushMethod"
-          options={[
-            { label: 'Gửi theo chu kỳ',   value: '1', inputKey: 'inputPushMethod' },
-            { label: 'Gửi theo thời điểm', value: '2', inputKey: 'inputPushMethod' },
-          ]}
-        />
-        <Field label="Chu kỳ gửi (phút)"  chkKey="chkPushPeriod"      inputKey="inputPushPeriod"  numeric />
-        <Field label="Thời điểm gửi 1"    chkKey="chkPushTime1"       inputKey="inputPushTime1" />
-        <Field label="Thời điểm gửi 2"    chkKey="chkPushTime2"       inputKey="inputPushTime2" />
-        <RadioField
-          label="Phương thức gửi sự kiện"
-          chkKey="chkPushEventMethod"
-          options={[
-            { label: 'Gửi theo chu kỳ', value: '0', inputKey: 'inputPushEventMethod' },
-            { label: 'Gửi tức thời',    value: '1', inputKey: 'inputPushEventMethod' },
-          ]}
-        />
-        <Field label="Thời gian ngẫu nhiên (phút)" chkKey="chkRandomMin" inputKey="inputRandomMin" numeric />
-
-        {/* ======= SECTION: CẤU HÌNH THIẾT BỊ ======= */}
-        <SectionHeader title="CẤU HÌNH THIẾT BỊ" color="#2E7D32" />
-        <Field label="Chu kỳ lưu (phút)"  chkKey="chkLatchPeriod"  inputKey="inputLatchPeriod"  numeric />
-        <Field label="Cấu hình sự kiện"   chkKey="chkEventConfig"  inputKey="inputEventConfig" />
-        <RadioField
-          label="Trạng thái kích hoạt thiết bị"
-          chkKey="chkEnableDevice"
-          options={[
-            { label: 'Tắt', value: '0', inputKey: 'inputEnableDevice' },
-            { label: 'Bật', value: '1', inputKey: 'inputEnableDevice' },
-          ]}
-        />
-
-        {/* ======= SECTION: PHIÊN BẢN & PIN ======= */}
-        <SectionHeader title="PHIÊN BẢN & PIN" color="#0277BD" />
-        <Field label="Phiên bản Firmware"    chkKey="chkFirmwareVer"     inputKey="inputFirmwareVer"     editable={false} />
-        <Field label="Phiên bản Boot"        chkKey="chkBootVer"         inputKey="inputBootVer"         editable={false} />
-        <Field label="Điện áp (V)"           chkKey="chkVoltage"         inputKey="inputVoltage"         editable={false} />
-        <Field label="Thời gian pin còn lại" chkKey="chkRemainBattery"   inputKey="inputRemainBattery"   editable={false} />
-        <Field label="Dung lượng pin"        chkKey="chkBatteryCapacity" inputKey="inputBatteryCapacity" editable={false} />
-
-        {/* ======= SECTION: TRẠNG THÁI ======= */}
-        <SectionHeader title="TRẠNG THÁI" color="#546E7A" />
-        <Field label="Trạng thái reset gần nhất" chkKey="chkTemp"       inputKey="inputTemp"       editable={false} />
-        <Field label="Số lần Reset"              chkKey="chkResetCount" inputKey="inputResetCount" editable={false} />
-
-        {/* ======= SECTION: LỆNH ĐIỀU KHIỂN ======= */}
-        <SectionHeader title="LỆNH ĐIỀU KHIỂN" color="#C62828" />
+        {/* commands */}
         <View style={styles.cmdRow}>
-          <CmdField label="Xóa dữ liệu"    chkKey="chkClearData" />
-          <CmdField label="Gửi dữ liệu ngay" chkKey="chkPushData" />
-          <CmdField label="Reset Module"    chkKey="chkResetModule" />
+          {CMDS.map(cmd => {
+            const on = !!(state as any)[cmd.chkKey];
+            return (
+              <TouchableOpacity
+                key={cmd.chkKey}
+                style={[styles.cmdChip, on && styles.cmdChipOn]}
+                onPress={() => toggle(cmd.chkKey)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.box, on && styles.boxRed]}>
+                  {on && <Text style={styles.tick}>✓</Text>}
+                </View>
+                <Text style={[styles.chipTxt, on && { color: '#C62828', fontWeight: '600' }]} numberOfLines={1}>
+                  {cmd.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
+
+        {/* data table */}
+        {tableRows.length > 0 && (
+          <View style={styles.table}>
+            <View style={styles.thead}>
+              <Text style={[styles.th, { flex: 1.1 }]}>Thông số</Text>
+              <Text style={[styles.th, { flex: 1 }]}>Giá trị</Text>
+            </View>
+            {tableRows}
+          </View>
+        )}
 
         <View style={{ height: 16 }} />
       </ScrollView>
 
-      {/* ======= BOTTOM BUTTONS ======= */}
+      {/* bottom buttons */}
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={[styles.btn, styles.btnRead, (!connected || busy) && styles.btnDisabled]}
@@ -399,13 +265,11 @@ export default function Overview() {
           activeOpacity={0.8}
         >
           {state.isReading ? (
-            <View style={styles.btnInner}>
+            <View style={styles.btnRow}>
               <ActivityIndicator size="small" color="#fff" />
-              <Text style={[styles.btnText, { marginLeft: 8 }]}>ĐANG ĐỌC...</Text>
+              <Text style={[styles.btnTxt, { marginLeft: 8 }]}>ĐANG ĐỌC...</Text>
             </View>
-          ) : (
-            <Text style={styles.btnText}>ĐỌC CẤU HÌNH</Text>
-          )}
+          ) : <Text style={styles.btnTxt}>ĐỌC CẤU HÌNH</Text>}
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.btn, styles.btnWrite, (!connected || busy) && styles.btnDisabled]}
@@ -414,13 +278,11 @@ export default function Overview() {
           activeOpacity={0.8}
         >
           {state.isWriting ? (
-            <View style={styles.btnInner}>
+            <View style={styles.btnRow}>
               <ActivityIndicator size="small" color="#fff" />
-              <Text style={[styles.btnText, { marginLeft: 8 }]}>ĐANG GHI...</Text>
+              <Text style={[styles.btnTxt, { marginLeft: 8 }]}>ĐANG GHI...</Text>
             </View>
-          ) : (
-            <Text style={styles.btnText}>GHI CẤU HÌNH</Text>
-          )}
+          ) : <Text style={styles.btnTxt}>GHI CẤU HÌNH</Text>}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -428,93 +290,99 @@ export default function Overview() {
 }
 
 /* ============================================================ */
-/*  STYLES                                                       */
-/* ============================================================ */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f2f5' },
+  container: { flex: 1, backgroundColor: '#f4f6f9' },
   scroll: { paddingBottom: 110 },
 
-  /* Section header */
-  sectionHeader: {
-    marginHorizontal: 12, marginTop: 14, marginBottom: 4,
-    paddingVertical: 7, paddingHorizontal: 14,
-    borderRadius: 8,
-  },
-  sectionHeaderText: { color: '#fff', fontWeight: 'bold', fontSize: 13, letterSpacing: 0.5 },
+  selectRow: { flexDirection: 'row', gap: 8, marginHorizontal: 12, marginTop: 8, marginBottom: 4, justifyContent: 'flex-end' },
+  pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
+  pillTxt: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
-  /* Select pills */
-  selectRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginHorizontal: 12, marginTop: 10 },
-  selectPill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
-  selectAllPill:  { backgroundColor: '#1976D2' },
-  unselectPill:   { backgroundColor: '#757575' },
-  pillDisabled:   { opacity: 0.4 },
-  selectPillText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-
-  /* Field card */
-  fieldCard: {
-    marginHorizontal: 12, marginBottom: 6,
-    backgroundColor: '#fff', borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 1,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2,
-  },
-  fieldRow: {
+  /* chip grid: 3 per row */
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: 8, marginTop: 4 },
+  chip: {
+    flexBasis: '31%', margin: '1.1%',
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 13, paddingHorizontal: 14,
-  },
-  fieldLabel: { flex: 1, fontSize: 14, color: '#222', fontWeight: '500' },
-  fieldLabelOff: { color: '#aaa' },
-  divider: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 14 },
-  fieldInput: {
-    marginHorizontal: 14, marginVertical: 10,
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 7,
-    paddingHorizontal: 12, paddingVertical: 8,
-    fontSize: 14, color: '#333', backgroundColor: '#fafafa',
-  },
-  fieldInputReadonly: { backgroundColor: '#f2f2f2', color: '#888' },
-
-  /* Sub-toggle (RTC "Now") */
-  subToggleRow: {
-    flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: 14, marginBottom: 10, marginTop: 2,
-  },
-  subToggleLabel: { marginLeft: 8, fontSize: 13, color: '#555' },
-
-  /* Sub-input group (ImpData) */
-  subInputGroup: { marginHorizontal: 14, marginBottom: 4 },
-  subInputLabel: { fontSize: 12, color: '#888', marginBottom: 2, marginTop: 6 },
-
-  /* Radio group */
-  radioGroup: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 10, paddingVertical: 8, gap: 6,
-  },
-
-  /* Command cards */
-  cmdRow: { flexDirection: 'row', marginHorizontal: 12, gap: 8, flexWrap: 'wrap' },
-  cmdCard: {
-    flex: 1, minWidth: 100,
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 10, padding: 12,
+    backgroundColor: '#fff', borderRadius: 8,
     borderWidth: 1, borderColor: '#ddd',
-    elevation: 1,
+    paddingVertical: 8, paddingHorizontal: 8,
+    minHeight: 48,
   },
-  cmdCardOn: { borderColor: '#ef9a9a', backgroundColor: '#fff8f8' },
-  cmdLabel: { marginLeft: 8, fontSize: 13, color: '#555', flex: 1 },
-  cmdLabelOn: { color: '#C62828', fontWeight: '600' },
+  chipOn: { borderColor: '#1976D2', backgroundColor: '#E3F2FD' },
+  box: {
+    width: 20, height: 20, borderRadius: 4,
+    borderWidth: 1.5, borderColor: '#bbb',
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: 6, flexShrink: 0,
+  },
+  boxOn:  { borderColor: '#1976D2', backgroundColor: '#1976D2' },
+  boxRed: { borderColor: '#C62828', backgroundColor: '#C62828' },
+  tick:   { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+  chipTxt:   { flex: 1, fontSize: 11.5, color: '#555', lineHeight: 15 },
+  chipTxtOn: { color: '#1565C0', fontWeight: '600' },
 
-  /* Bottom bar */
+  /* command chips: stretch to fill row */
+  cmdRow: { flexDirection: 'row', marginHorizontal: 8, marginTop: 2, gap: 6 },
+  cmdChip: {
+    flex: 1,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff', borderRadius: 8,
+    borderWidth: 1, borderColor: '#ddd',
+    paddingVertical: 8, paddingHorizontal: 8,
+    minHeight: 44,
+  },
+  cmdChipOn: { borderColor: '#C62828', backgroundColor: '#FFF3F3' },
+
+  /* data table */
+  table: {
+    marginHorizontal: 12, marginTop: 10,
+    backgroundColor: '#fff', borderRadius: 10,
+    borderWidth: 1, borderColor: '#e0e0e0',
+    overflow: 'hidden',
+  },
+  thead: {
+    flexDirection: 'row',
+    backgroundColor: '#37474F',
+    paddingVertical: 8, paddingHorizontal: 12,
+  },
+  th: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+
+  tr: {
+    flexDirection: 'row', alignItems: 'center',
+    borderBottomWidth: 1, borderColor: '#f0f0f0',
+    minHeight: 42, paddingHorizontal: 12,
+  },
+  trLabel: { flex: 1.1, fontSize: 12, color: '#444', paddingRight: 6 },
+  trInput: {
+    flex: 1,
+    height: 34, borderWidth: 1, borderColor: '#ddd', borderRadius: 6,
+    paddingHorizontal: 8, fontSize: 12, color: '#222', backgroundColor: '#fafafa',
+  },
+  trReadonly: { backgroundColor: '#f2f2f2', color: '#888' },
+
+  /* RTC row */
+  trRtc: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  nowBtn: {
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 6, borderWidth: 1, borderColor: '#1976D2',
+  },
+  nowBtnOn: { backgroundColor: '#1976D2' },
+  nowBtnTxt: { fontSize: 11, color: '#1976D2', fontWeight: '600' },
+
+  /* Radio row */
+  trRadio: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', paddingVertical: 4 },
+
+  /* bottom */
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', padding: 10, gap: 8,
-    backgroundColor: '#f0f2f5',
-    borderTopWidth: 1, borderColor: '#ddd',
+    backgroundColor: '#f4f6f9', borderTopWidth: 1, borderColor: '#ddd',
   },
   btn: { flex: 1, height: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  btnRead:  { backgroundColor: '#1976D2' },
-  btnWrite: { backgroundColor: '#D32F2F' },
+  btnRead:     { backgroundColor: '#1976D2' },
+  btnWrite:    { backgroundColor: '#D32F2F' },
   btnDisabled: { backgroundColor: '#9E9E9E' },
-  btnInner: { flexDirection: 'row', alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btnRow: { flexDirection: 'row', alignItems: 'center' },
+  btnTxt: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
