@@ -15,6 +15,8 @@ import {
   handleUpdateFirmware,
 } from './handleButton';
 
+import { saveValueAppSettingToNvm } from '../../service/storage';
+
 import SystemHeader from '../../component/SystemHeader';
 
 export default function SettingsScreen() {
@@ -26,16 +28,15 @@ export default function SettingsScreen() {
 
   // ===== SET TYPE WM =====
   const setTypeWM = (type: 'wm02' | 'wm02a' | 'wm06') => {
-    store.setState(prev => ({
-      ...prev,
-      appSetting: {
-        ...prev.appSetting,
-        setting: {
-          ...prev.appSetting.setting,
-          typeWM: type,
-        },
+    const newAppSetting = {
+      ...store.state.appSetting,
+      setting: {
+        ...store.state.appSetting.setting,
+        typeWM: type,
       },
-    }));
+    };
+    store.setState(prev => ({ ...prev, appSetting: newAppSetting }));
+    saveValueAppSettingToNvm(newAppSetting);
   };
 
   useEffect(() => {

@@ -1,5 +1,5 @@
-import React, { Dispatch, SetStateAction, useState } from 'react';
-import { getDefaultStorageValue, PropsAppSetting } from '../service/storage';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import { getDefaultStorageValue, PropsAppSetting, updateValueAppSettingFromNvm } from '../service/storage';
 import { Platform } from 'react-native';
 
 export type TYPE_TOUCH_ID = 'FaceID' | 'TouchID' | 'NoSupport';
@@ -117,6 +117,12 @@ export const StoreProvider = ({ children }) => {
     },
     isCredential: false,
   });
+
+  useEffect(() => {
+    updateValueAppSettingFromNvm().then(loaded => {
+      setHook(prev => ({ ...prev, appSetting: loaded }));
+    });
+  }, []);
 
   const initialalue: PropsStore = {
     state: hook,
