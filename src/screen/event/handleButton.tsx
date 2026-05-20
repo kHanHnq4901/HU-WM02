@@ -1,143 +1,104 @@
-// handleButton.ts
 import { Alert } from 'react-native';
 import { buildEwmFrame, parseDecryptedPayload } from '../../util/EwmFrameBuilder';
-import { sendAndReceiveQueued, bytesToHex } from '../../util/ble';
-import { hookProps, store, getEventNameFromId } from './controller';
-import { sleep } from '../../util';
+import { sendAndReceiveQueued } from '../../util/ble';
+import { EventItem, hookProps, store, getEventNameFromId } from './controller';
+
+let _stopFlag = false;
 
 export const onReadEvent = async () => {
   const connectedId = store.state.hhu.idConnected;
   const { state, setState } = hookProps;
 
-  // ⛔ Nếu đang đọc → chuyển sang DỪNG
   if (state.isReading) {
-    setState(p => ({ ...p, stopRead: true }));
+    _stopFlag = true;
     return;
   }
 
   if (!connectedId) {
-    Alert.alert('Lỗi', 'Chưa kết nối thiết bị BLE');
+    Alert.alert('Chưa kết nối', 'Vui lòng kết nối thiết bị BLE trước khi đọc.');
     return;
   }
 
-  // 🔹 UI index (1-based)
   const fromUI = parseInt(state.fromValue) || 1;
   const toUI   = parseInt(state.toValue)   || 32;
 
-  if (fromUI > toUI || fromUI < 1 || toUI > 32) {
-    Alert.alert('Lỗi', 'Giá trị không hợp lệ (1–32)');
+  if (fromUI < 1 || toUI > 32 || fromUI > toUI) {
+    Alert.alert('Giá trị không hợp lệ', 'Phạm vi hợp lệ từ 1 đến 32.');
     return;
   }
 
-  // 🔥 Firmware index (0-based)
   const fromIndex = fromUI - 1;
-  const toIndex   = toUI   - 1;
+  const toIndex   = toUI - 1;
+  const totalBlocks = Math.ceil((toIndex - fromIndex + 1) / 5);
 
-  // 🚀 BẮT ĐẦU ĐỌC
-  setState(p => ({
-    ...p,
-    isReading: true,
-    stopRead: false,
-    eventList: [],
-  }));
+  _stopFlag = false;
+  setState(p => ({ ...p, isReading: true, eventList: [], progress: { done: 0, total: totalBlocks } }));
 
   let rowNumber = 1;
+  let doneBlocks = 0;
+  let timeoutOccurred = false;
   const u16LE = (v: number) => [v & 0xff, (v >> 8) & 0xff];
 
   try {
-    // 🔥 ĐỌC THEO BLOCK 5 EVENT / FRAME
     for (let blockStart = fromIndex; blockStart <= toIndex; blockStart += 5) {
-      // 🛑 CHECK DỪNG
-      if (hookProps.state.stopRead) {
-        console.log('⛔ Người dùng dừng đọc Event');
-        break;
-      }
+      if (_stopFlag) break;
 
       const blockEnd = Math.min(blockStart + 4, toIndex);
-      const payload = [
-        ...u16LE(blockStart),
-        ...u16LE(blockEnd),
-      ];
-
-      const frame = buildEwmFrame(11, payload);
-      console.log(
-        `📤 Send (${blockStart + 1}-${blockEnd + 1})`,
-        bytesToHex(frame)
-      );
+      const frame = buildEwmFrame(11, [...u16LE(blockStart), ...u16LE(blockEnd)]);
 
       try {
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        if (!recv?.length) continue;
+        doneBlocks++;
 
-        const decryptedPayload = parseDecryptedPayload(new Uint8Array(recv));
-        let index = 0;
-        const rows: any[] = [];
+        if (recv?.length) {
+          const decryptedPayload = parseDecryptedPayload(new Uint8Array(recv));
+          let index = 0;
+          const rows: EventItem[] = [];
 
-        // 🔹 1 event = 2 byte index + 7 byte data
-        while (index + 9 <= decryptedPayload.length) {
-          const recvIndex =
-            ((decryptedPayload[index] << 8) |
-              decryptedPayload[index + 1]) + 1;
-          index += 2;
+          while (index + 9 <= decryptedPayload.length) {
+            index += 2; // skip 2-byte index field
+            const p = decryptedPayload.slice(index, index + 7);
+            index += 7;
 
-          const p = decryptedPayload.slice(index, index + 7);
-          index += 7;
+            rows.push({
+              id: rowNumber++,
+              time: `20${p[0]}-${p[1].toString().padStart(2,'0')}-${p[2].toString().padStart(2,'0')} ` +
+                    `${p[3].toString().padStart(2,'0')}:${p[4].toString().padStart(2,'0')}:${p[5].toString().padStart(2,'0')}`,
+              event: getEventNameFromId(p[6]),
+            });
+          }
 
-          const timeStr =
-            `20${p[0]}-${p[1].toString().padStart(2, '0')}-${p[2]
-              .toString()
-              .padStart(2, '0')} ` +
-            `${p[3].toString().padStart(2, '0')}:${p[4]
-              .toString()
-              .padStart(2, '0')}:${p[5]
-              .toString()
-              .padStart(2, '0')}`;
-
-          rows.push({
-            id: rowNumber++,
-            time: timeStr,
-            event: getEventNameFromId(p[6]),
-          });
+          if (rows.length) {
+            setState(p => ({
+              ...p,
+              eventList: [...p.eventList, ...rows],
+              progress: { done: doneBlocks, total: totalBlocks },
+            }));
+          } else {
+            setState(p => ({ ...p, progress: { done: doneBlocks, total: totalBlocks } }));
+          }
+        } else {
+          setState(p => ({ ...p, progress: { done: doneBlocks, total: totalBlocks } }));
         }
-
-        // ✅ setState 1 lần / block
-        if (rows.length) {
-          setState(p => ({
-            ...p,
-            eventList: [...p.eventList, ...rows],
-          }));
+      } catch (e: any) {
+        if (e?.message === 'EWM timeout') {
+          timeoutOccurred = true;
+          break;
         }
-      } catch (err) {
-        console.log(
-          `[Lỗi] Block ${blockStart + 1}-${blockEnd + 1}`,
-          err
-        );
+        doneBlocks++;
+        setState(p => ({ ...p, progress: { done: doneBlocks, total: totalBlocks } }));
       }
-
-      await sleep(100);
     }
   } finally {
-    // 🧹 RESET TRẠNG THÁI
-    setState(p => ({
-      ...p,
-      isReading: false,
-      stopRead: false,
-    }));
+    _stopFlag = false;
+    setState(p => ({ ...p, isReading: false, progress: null }));
+  }
 
-    console.log('✅ Kết thúc đọc Event');
+  if (timeoutOccurred) {
+    Alert.alert(
+      'Thiết bị không phản hồi',
+      'Quá thời gian chờ. Kiểm tra lại kết nối BLE và thử đọc lại.',
+      [{ text: 'Đã hiểu' }],
+    );
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-

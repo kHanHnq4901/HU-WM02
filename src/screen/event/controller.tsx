@@ -1,6 +1,4 @@
-// controller.ts
 import React, { useContext, useState } from 'react';
-import { Alert } from 'react-native';
 import { PropsStore, storeContext } from '../../store';
 
 export type EventItem = {
@@ -8,12 +6,13 @@ export type EventItem = {
   time: string;
   event: string;
 };
+
 export type HookState = {
   fromValue: string;
   toValue: string;
   eventList: EventItem[];
-    isReading: boolean;   // 🔥 đang đọc
-  stopRead: boolean;    // 🔥 yêu cầu dừng
+  isReading: boolean;
+  progress: { done: number; total: number } | null;
 };
 
 export type HookProps = {
@@ -25,30 +24,27 @@ export const hookProps = {} as HookProps;
 export let store = {} as PropsStore;
 
 export const GetHookProps = (): HookProps => {
-
   const [state, setState] = useState<HookState>({
     fromValue: '1',
     toValue: '10',
     eventList: [],
     isReading: false,
-    stopRead: false,
+    progress: null,
   });
 
   store = useContext(storeContext) as PropsStore;
-
   hookProps.state = state;
   hookProps.setState = setState;
 
   return hookProps;
 };
 
-/* ====== STATUS NAME ====== */
 export const getEventNameFromId = (eventId: number): string => {
   const map: Record<number, string> = {
-    9: "Sự kiện bắt đầu tháo rỡ",
-    10: "Sự kiện kết thúc tháo rỡ",
-    11: "Sự kiện bắt đầu từ trường xuất hiện",
-    12: "Sự kiện kết thúc từ trường xuất hiện",
+    9: "Bắt đầu tháo rỡ",
+    10: "Kết thúc tháo rỡ",
+    11: "Bắt đầu từ trường xuất hiện",
+    12: "Kết thúc từ trường xuất hiện",
     13: "Bắt đầu lượng nước tăng đột biến",
     14: "Kết thúc lượng nước tăng đột biến",
     15: "Bắt đầu vượt lưu lượng định mức",
