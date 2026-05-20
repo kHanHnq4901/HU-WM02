@@ -1,6 +1,4 @@
-// controller.ts
 import React, { useContext, useState } from 'react';
-import { Alert } from 'react-native';
 import { PropsStore, storeContext } from '../../store';
 
 export type DataItem = {
@@ -10,11 +8,13 @@ export type DataItem = {
   reverse: number;
   flow: number;
 };
+
 export type HookState = {
   fromValue: string;
   toValue: string;
   dataList: DataItem[];
   isReading: boolean;
+  progress: { done: number; total: number } | null;
 };
 
 export type HookProps = {
@@ -26,23 +26,21 @@ export const hookProps = {} as HookProps;
 export let store = {} as PropsStore;
 
 export const GetHookProps = (): HookProps => {
-
   const [state, setState] = useState<HookState>({
     fromValue: '1',
     toValue: '10',
     dataList: [],
     isReading: false,
+    progress: null,
   });
 
-
   store = useContext(storeContext) as PropsStore;
-
   hookProps.state = state;
   hookProps.setState = setState;
 
   return hookProps;
 };
-/* ====== STATUS NAME ====== */
+
 export const getEventNameFromId = (eventId: number): string => {
   const map: Record<number, string> = {
     9: "Sự kiện bắt đầu tháo rỡ",
@@ -63,5 +61,3 @@ export const getEventNameFromId = (eventId: number): string => {
   };
   return map[eventId] ?? "Không rõ";
 };
-
-
