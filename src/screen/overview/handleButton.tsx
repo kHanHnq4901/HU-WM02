@@ -359,7 +359,7 @@ export const Read = async (): Promise<void> => {
     if (state.chkIPPORT) {
       setState(p => ({ ...p, inputIPPORT: '' }));
       const pld = await send(11);
-      if (pld && pld.length >= 25) setState(p => ({ ...p, inputIPPORT: byteToAscii(pld.slice(0, 25)) }));
+      if (pld?.length) setState(p => ({ ...p, inputIPPORT: byteToAscii(pld.slice(0, 25)) }));
     }
 
     if (state.chkLatchPeriod) {
@@ -651,7 +651,7 @@ export const Write = async () => {
       }
     }
 
-    if (state.chkExpData) {
+    if (state.chkImpData) {
       const v = Number(state.inputExpData);
       if (Number.isInteger(v) && v >= 0 && v <= 0xffffffff) {
         const buf = new ArrayBuffer(4);
