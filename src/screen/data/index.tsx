@@ -34,7 +34,7 @@ const TableRow = React.memo(({ item }: { item: DataItem }) => (
 
 export default function DataScreen() {
   const { state, setState } = GetHookProps();
-  const isConnected = store.state.hhu.isConnected;
+  const isConnected = store.state.hhu.connect === 'CONNECTED';
 
   const renderItem = useCallback(({ item }: { item: DataItem }) => (
     <TableRow item={item} />
