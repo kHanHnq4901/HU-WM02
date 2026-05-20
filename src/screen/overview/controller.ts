@@ -77,6 +77,8 @@ export type HookState = {
   chkResetModule:boolean;
   chkRTCNow: boolean;
   inputTotalData : string;
+  isReading: boolean;
+  isWriting: boolean;
 };
 
 export type HookProps = {
@@ -163,6 +165,8 @@ export const GetHookProps = (): HookProps => {
     chkClearData:  false,
     chkPushData: false,
     chkResetModule: false,
+    isReading: false,
+    isWriting: false,
   });
 
   store = useContext(storeContext) as PropsStore;
@@ -172,6 +176,8 @@ export const GetHookProps = (): HookProps => {
 
   return hookProps;
 };
+export function setStatus(_msg: string) {}
+
 export function formatRTC(date: Date) {
   const hh = String(date.getHours()).padStart(2, '0');
   const mm = String(date.getMinutes()).padStart(2, '0');

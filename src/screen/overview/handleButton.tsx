@@ -289,19 +289,24 @@ export const Read = async (): Promise<void> => {
   const { state, setState } = hookProps;
   const connectedId = store.state.hhu.idConnected;
 
+  if (state.isReading || state.isWriting) return;
+
   if (!connectedId) {
-    Alert.alert('Lỗi', 'Chưa kết nối thiết bị');
+    Alert.alert('Chưa kết nối', 'Vui lòng kết nối thiết bị BLE trước khi đọc.');
     return;
   }
 
-  // Returns decrypted payload or null — never throws, isolates each param
+  setState(p => ({ ...p, isReading: true }));
+
+  // Re-throws timeout so the outer catch can detect and alert; swallows other errors
   const send = async (paramId: number, timeout = 5000): Promise<Uint8Array | null> => {
     try {
       const frame = buildEwmFrame(6, buildOptReadPayload([paramId]));
       const recv = await sendAndReceiveQueued(connectedId, frame, timeout);
       if (!recv?.length) return null;
       return parseDecryptedPayload(new Uint8Array(recv));
-    } catch {
+    } catch (e: any) {
+      if (e?.message === 'EWM timeout') throw e;
       return null;
     }
   };
@@ -505,7 +510,17 @@ export const Read = async (): Promise<void> => {
     }
 
     } catch (ex: any) {
-      Alert.alert('Lỗi', ex.toString());
+      if (ex?.message === 'EWM timeout') {
+        Alert.alert(
+          'Thiết bị không phản hồi',
+          'Quá thời gian chờ. Kiểm tra lại kết nối BLE và thử đọc lại.',
+          [{ text: 'Đã hiểu' }],
+        );
+      } else {
+        Alert.alert('Lỗi đọc', ex.toString());
+      }
+    } finally {
+      setState(p => ({ ...p, isReading: false }));
     }
 };
 
@@ -564,12 +579,16 @@ export function stringToAsciiBytes(str: string, length?: number): Uint8Array {
 
 export const Write = async () => {
   const connectedId = store.state.hhu.idConnected;
-  const { state } = hookProps;
+  const { state, setState } = hookProps;
+
+  if (state.isReading || state.isWriting) return;
 
   if (!connectedId) {
-    Alert.alert('Lỗi', 'Chưa kết nối thiết bị BLE');
+    Alert.alert('Chưa kết nối', 'Vui lòng kết nối thiết bị BLE trước khi ghi.');
     return;
   }
+
+  setState(p => ({ ...p, isWriting: true }));
     const successList: string[] = [];
     const errorList: string[] = [];
     const pushResult = (ok: boolean, name: string, err?: any) => {
@@ -910,10 +929,12 @@ export const Write = async () => {
       }
     }
 
+    setState(p => ({ ...p, isWriting: false }));
+
     if (successList.length || errorList.length) {
       let msg = '';
-      if (successList.length) msg += '✅ Ghi thành công:\n• ' + successList.join('\n• ') + '\n\n';
-      if (errorList.length) msg += '❌ Ghi thất bại:\n• ' + errorList.join('\n• ');
-      Alert.alert('Kết quả ghi dữ liệu', msg.trim());
+      if (successList.length) msg += 'Thành công:\n• ' + successList.join('\n• ') + '\n\n';
+      if (errorList.length) msg += 'Thất bại:\n• ' + errorList.join('\n• ');
+      Alert.alert('Kết quả ghi', msg.trim());
     }
 };

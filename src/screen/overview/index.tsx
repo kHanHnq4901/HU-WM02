@@ -8,9 +8,10 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { requestBlePermission } from '../../util/ble';
-import { formatRTC, GetHookProps } from './controller';
+import { formatRTC, GetHookProps, store } from './controller';
 import { Read, Write } from './handleButton';
 import { Radio } from '../../component/radio';
 import SystemHeader from '../../component/SystemHeader';
@@ -31,6 +32,8 @@ export default function Overview() {
 
   const hookProps = GetHookProps();
   const { state, setState } = hookProps;
+  const connected = store?.state?.hhu?.isConnected ?? false;
+  const busy = state.isReading || state.isWriting;
 
   /* ================= FIELD LIST ================= */
   const rtcTimer = useRef<NodeJS.Timeout | null>(null);
@@ -281,13 +284,30 @@ export default function Overview() {
   return (
     <KeyboardAvoidingView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        <SystemHeader title="CẤU HÌNH" subTitle="ĐỌC DỮ LIỆU ĐỒNG HỒ" />
+        <SystemHeader title="CẤU HÌNH" subTitle="ĐỌC / GHI CẤU HÌNH ĐỒNG HỒ" />
+
+        {/* TRẠNG THÁI KẾT NỐI */}
+        <View style={styles.statusRow}>
+          <View style={[styles.statusDot, { backgroundColor: connected ? '#4CAF50' : '#F44336' }]} />
+          <Text style={[styles.statusText, { color: connected ? '#388E3C' : '#D32F2F' }]}>
+            {connected ? 'Đã kết nối thiết bị' : 'Chưa kết nối — không thể đọc/ghi'}
+          </Text>
+          {busy && (
+            <View style={styles.busyBadge}>
+              <ActivityIndicator size="small" color="#1976D2" />
+              <Text style={styles.busyText}>
+                {state.isReading ? '  Đang đọc...' : '  Đang ghi...'}
+              </Text>
+            </View>
+          )}
+        </View>
+
         <View style={styles.selectRow}>
-          <TouchableOpacity onPress={selectAll}>
-            <Text style={styles.selectAll}>✔ Chọn tất cả</Text>
+          <TouchableOpacity onPress={selectAll} disabled={busy}>
+            <Text style={[styles.selectAll, busy && styles.disabledText]}>✔ Chọn tất cả</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={unselectAll}>
-            <Text style={styles.unselectAll}>✖ Hủy chọn</Text>
+          <TouchableOpacity onPress={unselectAll} disabled={busy}>
+            <Text style={[styles.unselectAll, busy && styles.disabledText]}>✖ Hủy chọn</Text>
           </TouchableOpacity>
         </View>
 
@@ -327,11 +347,35 @@ export default function Overview() {
       </ScrollView>
 
       <View style={styles.bottomButtons}>
-        <TouchableOpacity style={styles.btnRead} onPress={() => Read()}>
-          <Text style={styles.btnText}>ĐỌC</Text>
+        <TouchableOpacity
+          style={[styles.btnRead, (!connected || busy) && styles.btnDisabled]}
+          onPress={Read}
+          disabled={!connected || busy}
+          activeOpacity={0.8}
+        >
+          {state.isReading ? (
+            <View style={styles.btnInner}>
+              <ActivityIndicator size="small" color="#fff" />
+              <Text style={[styles.btnText, { marginLeft: 6 }]}>ĐANG ĐỌC...</Text>
+            </View>
+          ) : (
+            <Text style={styles.btnText}>ĐỌC CẤU HÌNH</Text>
+          )}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.btnWrite} onPress={() => Write()}>
-          <Text style={styles.btnText}>GHI</Text>
+        <TouchableOpacity
+          style={[styles.btnWrite, (!connected || busy) && styles.btnDisabled]}
+          onPress={Write}
+          disabled={!connected || busy}
+          activeOpacity={0.8}
+        >
+          {state.isWriting ? (
+            <View style={styles.btnInner}>
+              <ActivityIndicator size="small" color="#fff" />
+              <Text style={[styles.btnText, { marginLeft: 6 }]}>ĐANG GHI...</Text>
+            </View>
+          ) : (
+            <Text style={styles.btnText}>GHI CẤU HÌNH</Text>
+          )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -381,9 +425,21 @@ const styles = StyleSheet.create({
 
   radioLabel: { marginLeft: 6 },
 
-  bottomButtons: { flexDirection: 'row', padding: 0},
-  btnRead: { flex: 1, backgroundColor: '#1976D2', margin: 2, padding: 12, borderRadius: 8 },
-  btnWrite: { flex: 1, backgroundColor: '#D32F2F', margin: 2, padding: 12, borderRadius: 8 },
+  statusRow: {
+    flexDirection: 'row', alignItems: 'center',
+    marginHorizontal: 10, marginBottom: 4, flexWrap: 'wrap',
+  },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  statusText: { fontSize: 13, fontWeight: '500', flex: 1 },
+  busyBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  busyText: { fontSize: 12, color: '#1976D2', fontWeight: '500' },
+  disabledText: { color: '#bbb' },
+
+  bottomButtons: { flexDirection: 'row', padding: 0 },
+  btnRead: { flex: 1, backgroundColor: '#1976D2', margin: 2, padding: 12, borderRadius: 8, alignItems: 'center' },
+  btnWrite: { flex: 1, backgroundColor: '#D32F2F', margin: 2, padding: 12, borderRadius: 8, alignItems: 'center' },
+  btnDisabled: { backgroundColor: '#9E9E9E' },
+  btnInner: { flexDirection: 'row', alignItems: 'center' },
   btnText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
   commandBox: {
   margin: 10,
