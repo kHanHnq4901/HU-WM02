@@ -74,7 +74,7 @@ export const handleUpdateFirmware = async (): Promise<void> => {
 
   if (!connectedId) {
     Alert.alert("Lỗi", "Chưa kết nối thiết bị");
-    return;
+    return;                      ``
   }
 
   try {
@@ -86,10 +86,12 @@ export const handleUpdateFirmware = async (): Promise<void> => {
       otaTotal: 0
     }));
 
-    const response = await fetch(`${BASE_URL}/firmware.txt`);
+    // 1. Tải file firmware
+    const response = await fetch(`${BASE_URL}/firmware.bin`);
     const arrayBuffer = await response.arrayBuffer();
     const firmwareBytes = new Uint8Array(arrayBuffer);
 
+    // 2. Chia nhỏ dữ liệu và tính toán gói tin
     const CHUNK_SIZE = 512;
     const firmwareChunks: Uint8Array[] = [];
 
@@ -104,15 +106,35 @@ export const handleUpdateFirmware = async (): Promise<void> => {
       firmwareChunks.push(finalChunk);
     }
 
-    const totalBytes = firmwareChunks.reduce((a,b) => a + b.length, 0);
+    // ==============================================================
+    // 🔥 LOG TOÀN BỘ DỮ LIỆU TỪ GÓI F1 ĐẾN F69 ĐỂ KIỂM TRA
+    // ==============================================================
+    console.log("---------------- START LOG DATA F1 -> F69 ----------------");
+    
+    // Chúng ta lặp qua tối đa 69 gói (hoặc tổng số gói nếu ít hơn 69)
+    const logLimit = Math.min(firmwareChunks.length, 69);
+    
+    for (let i = 0; i < logLimit; i++) {
+      const data = firmwareChunks[i];
+      const packetName = `F${i + 1}`;
+      
+      // Chuyển toàn bộ mảng byte của gói này thành chuỗi Hex
+      const fullHexString = Array.from(data)
+        .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+        .join(' ');
 
-    hookProps.setState(prev => ({
-      ...prev,
-      otaTotal: totalBytes
-    }));
+      console.log(`📦 [${packetName}] (Size: ${data.length} bytes):`);
+      console.log(`${fullHexString}`);
+      console.log(`--------------------------------------------------`);
+    }
+    
+    console.log("---------------- END LOG DATA ----------------\n");
+    // ==============================================================
 
-    console.log(`📦 Tổng file: ${firmwareChunks.length}`);
+    const totalBytes = firmwareChunks.reduce((a, b) => a + b.length, 0);
+    hookProps.setState(prev => ({ ...prev, otaTotal: totalBytes }));
 
+    // 3. Bắt đầu quy trình gửi BLE
     const startCmd = new TextEncoder().encode("OPT_UPDATE");
     await sendRawBle(connectedId, startCmd);
 
@@ -122,41 +144,26 @@ export const handleUpdateFirmware = async (): Promise<void> => {
       const text = await waitRawText(5000);
 
       if (text === "SUCCESS") {
-        hookProps.setState(prev => ({
-          ...prev,
-          otaProgress: 100,
-          otaRunning: false
-        }));
-
+        hookProps.setState(prev => ({ ...prev, otaProgress: 100, otaRunning: false }));
         Alert.alert("Thành công", "Cập nhật Firmware hoàn tất!");
         break;
       }
 
-      if (text === "FAIL") {
-        throw new Error("Thiết bị báo FAIL");
-      }
+      if (text === "FAIL") throw new Error("Thiết bị báo FAIL");
 
       if (text.startsWith("F")) {
-        const fileIndex = parseInt(text.replace("F",""), 10);
-
+        const fileIndex = parseInt(text.replace("F", ""), 10);
+        
         if (fileIndex > 0 && fileIndex <= firmwareChunks.length) {
           const data = firmwareChunks[fileIndex - 1];
-
-          // 🔥 TRÍCH XUẤT VÀ LOG CRC TỪ 2 BYTE CUỐI
-          const crcLow = data[data.length - 2].toString(16).padStart(2, '0').toUpperCase();
-          const crcHigh = data[data.length - 1].toString(16).padStart(2, '0').toUpperCase();
           
-          console.log(`📤 Đang gửi ${text} - Kích thước: ${data.length} bytes - CRC: 0x${crcHigh}${crcLow} [L:${crcLow} H:${crcHigh}]`);
-
-          // Tiến hành gửi data
+          // Log ngắn gọn khi đang truyền tải thực tế
+          console.log(`>> Đang truyền gói: F${fileIndex}`);
+          
           await sendRawBle(connectedId, data);
 
           sentBytes += data.length;
-
-          const progress = Math.floor(
-            (sentBytes / totalBytes) * 100
-          );
-
+          const progress = Math.floor((sentBytes / totalBytes) * 100);
           hookProps.setState(prev => ({
             ...prev,
             otaProgress: progress,
@@ -167,12 +174,8 @@ export const handleUpdateFirmware = async (): Promise<void> => {
     }
 
   } catch (error: any) {
-    hookProps.setState(prev => ({
-      ...prev,
-      otaRunning: false
-    }));
-
-    console.log("OTA error:", error);
+    hookProps.setState(prev => ({ ...prev, otaRunning: false }));
+    console.error("OTA Error:", error);
     Alert.alert("Lỗi cập nhật", error.message);
   }
 };
