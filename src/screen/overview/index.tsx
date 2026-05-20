@@ -246,7 +246,7 @@ export default function Overview() {
 /* ══════════════════════════════════════════════════ */
 
 const s = StyleSheet.create({
-  root:   { flex:1, backgroundColor:'#F0F2F5' },
+  root:   { flex:1, backgroundColor:'#f4f6f9' },
   scroll: { paddingBottom:92 },
   pillRow: { flexDirection:'row', gap:6, marginHorizontal:8, marginTop:4, marginBottom:2, justifyContent:'flex-end' },
   pill:    { paddingHorizontal:10, paddingVertical:4, borderRadius:14 },
@@ -319,7 +319,7 @@ const s = StyleSheet.create({
   bar: {
     position:'absolute', bottom:0, left:0, right:0,
     flexDirection:'row', padding:8, gap:8,
-    backgroundColor:'#F0F2F5', borderTopWidth:1, borderColor:'#E0E0E0',
+    backgroundColor:'#f4f6f9', borderTopWidth:1, borderColor:'#ddd',
   },
   btn:    { flex:1, height:44, borderRadius:8, justifyContent:'center', alignItems:'center' },
   btnR:   { backgroundColor:'#1976D2' },

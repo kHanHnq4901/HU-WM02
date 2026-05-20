@@ -1,92 +1,36 @@
 import React, { useEffect } from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ActivityIndicator,
-} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-
-import { Colors } from '../../theme';
-import {
-  GetHookProps,
-  PropsItemBle,
-  hookProps,
-  store,
-  onInit,
-  onDeInit,
-} from './controller';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { GetHookProps, PropsItemBle, hookProps, store, onInit, onDeInit } from './controller';
 import { connectHandle, disConnect, onScanPress } from './handleButton';
+import SystemHeader from '../../component/SystemHeader';
 
-const getRssiDisplay = (rssi: number) => {
-  if (rssi > -60) {
-    return { icon: '📶', color: '#4CAF50', label: 'Mạnh' };
-  }
-  if (rssi > -80) {
-    return { icon: '📶', color: '#FFC107', label: 'Trung bình' };
-  }
-  return { icon: '📶', color: '#F44336', label: 'Yếu' };
+const rssiInfo = (rssi: number) => {
+  if (rssi > -60) return { bar: '▂▄▆█', color: '#388E3C' };
+  if (rssi > -80) return { bar: '▂▄▆_', color: '#F57C00' };
+  return { bar: '▂▄__', color: '#D32F2F' };
 };
 
-const BleItem = (props: PropsItemBle & { statusLabel?: string }) => {
-  const isConnected = props.id === store.state.hhu.idConnected;
-  const rssiUI =
-    props.rssi !== undefined ? getRssiDisplay(props.rssi) : null;
+const BleItem = (props: PropsItemBle) => {
+  const isConn = props.id === store.state.hhu.idConnected;
+  const ri = props.rssi !== undefined ? rssiInfo(props.rssi) : null;
 
   return (
     <TouchableOpacity
-      style={[
-        styles.deviceCard,
-        isConnected && {
-          borderLeftColor: '#4CAF50',
-          borderLeftWidth: 4,
-        },
-      ]}
+      style={[styles.deviceCard, isConn && styles.deviceCardConn]}
       onPress={() => connectHandle(props.id, props.name)}
+      activeOpacity={0.7}
     >
-      {/* ICON */}
-      <View
-        style={[
-          styles.iconCircle,
-          { backgroundColor: isConnected ? '#4CAF50' : Colors.primary },
-        ]}
-      >
-        <Text style={{ fontSize: 18, color: '#fff' }}>
-          {isConnected ? '🔗' : '📡'}
-        </Text>
+      <View style={[styles.iconCircle, { backgroundColor: isConn ? '#388E3C' : '#1976D2' }]}>
+        <Text style={styles.iconTxt}>{isConn ? '✓' : '⬡'}</Text>
       </View>
-
-      {/* INFO */}
       <View style={{ flex: 1 }}>
-        <Text style={styles.deviceName} numberOfLines={1}>
-          {props.name || 'Không tên'}
-        </Text>
-        <Text style={styles.deviceId} numberOfLines={1}>
-          ID: {props.id}
-        </Text>
-        {props.statusLabel && (
-          <Text
-            style={[
-              styles.deviceStatus,
-              { color: isConnected ? '#4CAF50' : '#999' },
-            ]}
-          >
-            {props.statusLabel}
-          </Text>
-        )}
+        <Text style={styles.devName} numberOfLines={1}>{props.name || 'Không tên'}</Text>
+        <Text style={styles.devId}  numberOfLines={1}>{props.id}</Text>
       </View>
-
-      {/* RSSI */}
-      {rssiUI && (
-        <View style={styles.rssiContainer}>
-          <Text style={{ fontSize: 14, color: rssiUI.color }}>
-            {rssiUI.icon}
-          </Text>
-          <Text style={[styles.rssiText, { color: rssiUI.color }]}>
-            {props.rssi} dBm
-          </Text>
+      {ri && (
+        <View style={styles.rssiBox}>
+          <Text style={[styles.rssiBar, { color: ri.color }]}>{ri.bar}</Text>
+          <Text style={[styles.rssiVal, { color: ri.color }]}>{props.rssi} dBm</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -95,177 +39,110 @@ const BleItem = (props: PropsItemBle & { statusLabel?: string }) => {
 
 export default function BLEScreen() {
   GetHookProps();
+  useEffect(() => { onInit(); onScanPress(); return () => onDeInit(); }, []);
 
-  useEffect(() => {
-    onInit();
-    onScanPress();
-    return () => onDeInit();
-  }, []);
+  const scanning = hookProps.state.ble.isScan;
 
   return (
-    <LinearGradient colors={['#f9fbfd', '#eef3f7']} style={{ flex: 1 }}>
+    <View style={styles.container}>
+      <SystemHeader title="KẾT NỐI BLE" subTitle="Quét và kết nối thiết bị" />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 12, paddingBottom: 100 }}
+        contentContainerStyle={styles.scroll}
       >
         {store.state.hhu.connect === 'CONNECTED' && (
           <>
-            <Text style={styles.sectionTitle}>🔗 Đang kết nối</Text>
+            <Text style={styles.sectionTitle}>Đang kết nối</Text>
             <BleItem
               id={store.state.hhu.idConnected as string}
               name={store.state.hhu.name as string}
               rssi={store.state.hhu.rssi || undefined}
-              statusLabel="Kết nối thành công"
             />
           </>
         )}
 
-        <Text style={styles.sectionTitle}>📡 Thiết bị khả dụng</Text>
-
-        {hookProps.state.ble.listNewDevice.length > 0 ? (
-          hookProps.state.ble.listNewDevice.map(item => (
-            <BleItem
-              key={item.id}
-              id={item.id}
-              name={item.name}
-              rssi={item.rssi}
-              statusLabel="Chưa kết nối"
-            />
-          ))
-        ) : (
-          <Text style={styles.emptyText}>Không tìm thấy thiết bị mới</Text>
-        )}
+        <Text style={styles.sectionTitle}>Thiết bị khả dụng</Text>
+        {hookProps.state.ble.listNewDevice.length > 0
+          ? hookProps.state.ble.listNewDevice.map(item => (
+              <BleItem key={item.id} id={item.id} name={item.name} rssi={item.rssi} />
+            ))
+          : <Text style={styles.emptyTxt}>{scanning ? 'Đang quét...' : 'Không tìm thấy thiết bị'}</Text>
+        }
 
         {hookProps.state.ble.listBondedDevice.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>🕘 Đã từng kết nối</Text>
+            <Text style={styles.sectionTitle}>Đã từng kết nối</Text>
             {hookProps.state.ble.listBondedDevice.map(item => (
-              <BleItem
-                key={item.id}
-                id={item.id}
-                name={item.name}
-                rssi={item.rssi}
-                statusLabel="Đã kết nối trước đây"
-              />
+              <BleItem key={item.id} id={item.id} name={item.name} rssi={item.rssi} />
             ))}
           </>
         )}
       </ScrollView>
 
-      {store.state.hhu.connect === 'CONNECTED' && (
-        <TouchableOpacity
-          onPress={() => disConnect(store.state.hhu.idConnected)}
-          style={[styles.fab, { bottom: 90, backgroundColor: '#d9534f' }]}
-        >
-          <Text style={{ fontSize: 22, color: '#fff' }}>❌</Text>
-        </TouchableOpacity>
-      )}
-
-      <TouchableOpacity onPress={onScanPress} style={styles.fab}>
-        {hookProps.state.ble.isScan ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={{ fontSize: 22, color: '#fff' }}>🔍</Text>
+      {/* bottom bar */}
+      <View style={styles.bar}>
+        {store.state.hhu.connect === 'CONNECTED' && (
+          <TouchableOpacity
+            style={[styles.btn, { backgroundColor: '#D32F2F', flex: 1 }]}
+            onPress={() => disConnect(store.state.hhu.idConnected)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.btnTxt}>Ngắt kết nối</Text>
+          </TouchableOpacity>
         )}
-      </TouchableOpacity>
-    </LinearGradient>
+        <TouchableOpacity
+          style={[styles.btn, { backgroundColor: '#1976D2', flex: 1 }]}
+          onPress={onScanPress}
+          activeOpacity={0.8}
+        >
+          {scanning
+            ? <View style={styles.btnRow}><ActivityIndicator size="small" color="#fff" /><Text style={[styles.btnTxt, { marginLeft: 8 }]}>Đang quét...</Text></View>
+            : <Text style={styles.btnTxt}>Quét thiết bị</Text>
+          }
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    backgroundColor: '#fff',
-    elevation: 2,
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text,
-  },
-  dashboard: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: 12,
-  },
-  card: {
-    flex: 1,
-    marginHorizontal: 6,
-    padding: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  cardValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 4,
-  },
-  cardLabel: {
-    fontSize: 12,
-    color: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#f4f6f9' },
+  scroll: { padding: 8, paddingBottom: 72 },
+
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: Colors.text,
-    marginVertical: 8,
+    fontSize: 11, fontWeight: '700', color: '#999',
+    letterSpacing: 0.5, marginTop: 6, marginBottom: 4, marginLeft: 2,
   },
-  emptyText: {
-    fontSize: 13,
-    color: '#888',
-    fontStyle: 'italic',
-  },
+
   deviceCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 12,
-    elevation: 2,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff', padding: 10,
+    marginBottom: 6, borderRadius: 10,
+    borderWidth: 1, borderColor: '#e0e0e0',
   },
+  deviceCardConn: { borderColor: '#388E3C', borderLeftWidth: 3, backgroundColor: '#F1F8F1' },
+
   iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
+    width: 36, height: 36, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center', marginRight: 10,
   },
-  deviceName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.text,
+  iconTxt: { fontSize: 16, color: '#fff', fontWeight: 'bold' },
+
+  devName: { fontSize: 14, fontWeight: '600', color: '#222' },
+  devId:   { fontSize: 11, color: '#999', marginTop: 1 },
+
+  rssiBox: { alignItems: 'flex-end', marginLeft: 8 },
+  rssiBar: { fontSize: 11, fontWeight: 'bold' },
+  rssiVal: { fontSize: 11, marginTop: 1 },
+
+  emptyTxt: { fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 24, fontStyle: 'italic' },
+
+  bar: {
+    flexDirection: 'row', padding: 8, gap: 8,
+    backgroundColor: '#f4f6f9', borderTopWidth: 1, borderColor: '#ddd',
   },
-  deviceId: {
-    fontSize: 12,
-    color: '#777',
-  },
-  deviceStatus: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  rssiContainer: {
-    alignItems: 'flex-end',
-    marginLeft: 8,
-  },
-  rssiText: {
-    fontSize: 11,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: Colors.primary,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-  },
+  btn:    { height: 44, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  btnRow: { flexDirection: 'row', alignItems: 'center' },
+  btnTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });
