@@ -303,9 +303,9 @@ const s = StyleSheet.create({
   },
   thead: { flexDirection:'row', backgroundColor:'#263238', paddingVertical:8, paddingHorizontal:12 },
   th:    { color:'#fff', fontSize:12, fontWeight:'700' },
-  tr:    { flexDirection:'row', alignItems:'center', borderBottomWidth:1, borderColor:'#F5F5F5', minHeight:42, paddingHorizontal:12 },
-  tLbl:  { flex:1.1, fontSize:12, color:'#444', paddingRight:6 },
-  tIn:   { flex:1, height:32, borderWidth:1, borderColor:'#E0E0E0', borderRadius:6, paddingHorizontal:8, fontSize:12, color:'#222', backgroundColor:'#FAFAFA' },
+  tr:    { flexDirection:'row', alignItems:'center', borderBottomWidth:1, borderColor:'#F5F5F5', minHeight:50, paddingHorizontal:12, paddingVertical:6 },
+  tLbl:  { flex:1.1, fontSize:13, color:'#444', paddingRight:6 },
+  tIn:   { flex:1, height:38, borderWidth:1, borderColor:'#E0E0E0', borderRadius:6, paddingHorizontal:10, fontSize:13, color:'#222', backgroundColor:'#FAFAFA' },
   tRO:   { backgroundColor:'#F5F5F5', color:'#999', borderColor:'#EEE' },
   radRow:{ flex:1, flexDirection:'row', flexWrap:'wrap', paddingVertical:5, gap:8 },
 
