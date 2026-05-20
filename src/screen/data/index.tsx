@@ -20,7 +20,7 @@ type DataItem = {
   flow: number;
 };
 
-const ITEM_HEIGHT = 38;
+const ITEM_HEIGHT = 44;
 
 const TableRow = React.memo(({ item }: { item: DataItem }) => (
   <View style={styles.tableRow}>

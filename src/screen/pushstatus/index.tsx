@@ -12,7 +12,7 @@ import { GetHookProps, PushStatusItem, store } from './controller';
 import { onReadData } from './handleButton';
 import SystemHeader from '../../component/SystemHeader';
 
-const ITEM_HEIGHT = 38;
+const ITEM_HEIGHT = 44;
 
 const StatusRow = React.memo(({ item }: { item: PushStatusItem }) => (
   <View style={styles.tableRow}>

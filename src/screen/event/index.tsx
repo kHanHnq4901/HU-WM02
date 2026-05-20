@@ -12,7 +12,7 @@ import { EventItem, GetHookProps, store } from './controller';
 import { onReadEvent } from './handleButton';
 import SystemHeader from '../../component/SystemHeader';
 
-const ITEM_HEIGHT = 38;
+const ITEM_HEIGHT = 44;
 
 const EventRow = React.memo(({ item }: { item: EventItem }) => (
   <View style={styles.tableRow}>

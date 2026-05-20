@@ -305,9 +305,9 @@ const s = StyleSheet.create({
   },
   thead: { flexDirection:'row', backgroundColor:'#263238', paddingVertical:6, paddingHorizontal:10 },
   th:    { color:'#fff', fontSize:12, fontWeight:'700' },
-  tr:    { flexDirection:'row', alignItems:'center', borderBottomWidth:1, borderColor:'#F5F5F5', minHeight:44, paddingHorizontal:10, paddingVertical:4 },
-  tLbl:  { flex:1.1, fontSize:12, color:'#444', paddingRight:4 },
-  tIn:   { flex:1, height:34, borderWidth:1, borderColor:'#E0E0E0', borderRadius:5, paddingHorizontal:8, fontSize:13, color:'#222', backgroundColor:'#FAFAFA' },
+  tr:    { flexDirection:'row', alignItems:'center', borderBottomWidth:1, borderColor:'#F5F5F5', minHeight:48, paddingHorizontal:10, paddingVertical:6 },
+  tLbl:  { flex:1.1, fontSize:13, color:'#444', paddingRight:4 },
+  tIn:   { flex:1, height:36, borderWidth:1, borderColor:'#E0E0E0', borderRadius:5, paddingHorizontal:8, fontSize:13, color:'#222', backgroundColor:'#FAFAFA' },
   tRO:   { backgroundColor:'#F5F5F5', color:'#999', borderColor:'#EEE' },
   radRow:{ flex:1, flexDirection:'row', flexWrap:'wrap', paddingVertical:4, gap:6 },
 
