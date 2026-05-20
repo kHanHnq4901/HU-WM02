@@ -25,7 +25,7 @@ export default function SettingsScreen() {
   const typeWM = store.state.appSetting.setting.typeWM;
 
   // ===== SET TYPE WM =====
-  const setTypeWM = (type: 'wm02' | 'wm02a') => {
+  const setTypeWM = (type: 'wm02' | 'wm02a' | 'wm06') => {
     store.setState(prev => ({
       ...prev,
       appSetting: {
@@ -88,6 +88,22 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={styles.optionText}>WM02A</Text>
+
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.option,
+            typeWM === 'wm06' && styles.optionActive,
+          ]}
+          onPress={() => setTypeWM('wm06')}
+        >
+
+          <View style={styles.radio}>
+            {typeWM === 'wm06' && <View style={styles.radioDot} />}
+          </View>
+
+          <Text style={styles.optionText}>WM06</Text>
 
         </TouchableOpacity>
 

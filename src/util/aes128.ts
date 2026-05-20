@@ -50,6 +50,11 @@ export const AES_KEY_WM02 = Uint8Array.from([
     0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
 ]);
 
+export const AES_KEY_WM06 = Uint8Array.from([
+    0x2a, 0x7d, 0x14, 0x15, 0x27, 0xae, 0xd2, 0xa6,
+    0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
+]);
+
 
 function gmul2(value: number): number {
     const temp = (value >> 7) & 0xFF; 
@@ -215,15 +220,18 @@ function aes_enc_dec(state: Uint8Array, key: Uint8Array, dir: number): Uint8Arra
 
 
 export function aes128Encrypt(data: Uint8Array): Uint8Array {
+    const typeWM = store.state.appSetting.setting.typeWM;
     const masterKey =
-        store.state.appSetting.setting.typeWM === 'wm02a'
-            ? AES_KEY_WM02A
-            : AES_KEY_WM02;
+        typeWM === 'wm02a' ? AES_KEY_WM02A :
+        typeWM === 'wm06'  ? AES_KEY_WM06  :
+        AES_KEY_WM02;
 
+    // 1. Padding logic giống C#
     let newData: Uint8Array;
     if (data.length < 16) {
         newData = new Uint8Array(16);
         newData.set(data);
+        // C# mặc định khởi tạo mảng là 0x00 nên không cần loop gán 0
     } else {
         newData = data;
     }
@@ -232,23 +240,24 @@ export function aes128Encrypt(data: Uint8Array): Uint8Array {
     const numBlocks = Math.floor(iLen / 16);
     const bResult = new Uint8Array(iLen);
 
-    let iIndex = 0;
+    // QUAN TRỌNG: Key chỉ được copy một lần duy nhất TRƯỚC vòng lặp
+    // Để các block sau sử dụng key đã bị biến đổi từ block trước (giống C#)
+    const workingKey = Uint8Array.from(masterKey);
 
     for (let i = 0; i < numBlocks; i++) {
         const bDataTemp = newData.slice(i * 16, i * 16 + 16);
+        
+        // Truyền workingKey vào, hàm aes_enc_dec sẽ làm thay đổi nội dung workingKey
+        aes_enc_dec(bDataTemp, workingKey, 0);
 
-        const keyCopy = Uint8Array.from(masterKey);
-
-        aes_enc_dec(bDataTemp, keyCopy, 0);
-
-        bResult.set(bDataTemp, iIndex);
-        iIndex += 16;
+        bResult.set(bDataTemp, i * 16);
     }
 
+    // Phần dư không đủ 16 byte thì giữ nguyên (giống C#)
     if (iLen % 16 !== 0) {
-        const remaining = iLen % 16;
-        for (let j = 0; j < remaining; j++) {
-            bResult[iIndex + j] = newData[numBlocks * 16 + j];
+        const iIndex = numBlocks * 16;
+        for (let j = iIndex; j < iLen; j++) {
+            bResult[j] = newData[j];
         }
     }
 
@@ -256,29 +265,29 @@ export function aes128Encrypt(data: Uint8Array): Uint8Array {
 }
 
 export function aes128Decrypt(data: Uint8Array): Uint8Array {
-
+    const typeWM = store.state.appSetting.setting.typeWM;
     const masterKey =
-        store.state.appSetting.setting.typeWM === 'wm02a'
-            ? AES_KEY_WM02A
-            : AES_KEY_WM02;
+        typeWM === 'wm02a' ? AES_KEY_WM02A :
+        typeWM === 'wm06'  ? AES_KEY_WM06  :
+        AES_KEY_WM02;
 
     const iLen = data.length;
     const bResult = new Uint8Array(iLen);
     const iSumDecrypt = Math.floor(iLen / 16) * 16;
 
-    let iIndex = 0;
+    // QUAN TRỌNG: Tương tự như Encrypt, key phải được kế thừa qua các block
+    const workingKey = Uint8Array.from(masterKey);
 
     for (let i = 0; i < iSumDecrypt; i += 16) {
         const bDataTemp = data.slice(i, i + 16);
 
-        const keyCopy = Uint8Array.from(masterKey);
+        // Giải mã block hiện tại và cập nhật workingKey cho block tiếp theo
+        aes_enc_dec(bDataTemp, workingKey, 1);
 
-        aes_enc_dec(bDataTemp, keyCopy, 1);
-
-        bResult.set(bDataTemp, iIndex);
-        iIndex += 16;
+        bResult.set(bDataTemp, i);
     }
 
+    // Copy nốt phần dư nếu có
     for (let i = iSumDecrypt; i < iLen; i++) {
         bResult[i] = data[i];
     }

@@ -17,7 +17,7 @@ export type PropsSettingAndAlarm = {
   upperThresholdValue: number;
   lowerThresholdValue: number;
   retryCount : number;
-  typeWM : 'wm02'|'wm02a';
+  typeWM : 'wm02'|'wm02a'|'wm06';
 };
 
 export type PropsAppSetting = {
