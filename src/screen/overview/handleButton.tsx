@@ -294,950 +294,214 @@ export const Read = async (): Promise<void> => {
     return;
   }
 
+  // Returns decrypted payload or null — never throws, isolates each param
+  const send = async (paramId: number, timeout = 5000): Promise<Uint8Array | null> => {
+    try {
+      const frame = buildEwmFrame(6, buildOptReadPayload([paramId]));
+      const recv = await sendAndReceiveQueued(connectedId, frame, timeout);
+      if (!recv?.length) return null;
+      return parseDecryptedPayload(new Uint8Array(recv));
+    } catch {
+      return null;
+    }
+  };
+
   try {
-    // Initialize BLE listener if needed
-    // Assuming listener is already set up in connection
-
-    // Module No
     if (state.chkModuleNo) {
-      setState(prev => ({ ...prev, inputModuleNo: '' }));
-
-      const paramIds = [6];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-      const moduleNoBytes = decryptedPayload.slice(0, 15);
-      const moduleNo = String.fromCharCode(...moduleNoBytes).trim();
-      setState(prev => ({ ...prev, inputModuleNo: moduleNo }));
+      setState(p => ({ ...p, inputModuleNo: '' }));
+      const pld = await send(6);
+      if (pld) setState(p => ({ ...p, inputModuleNo: String.fromCharCode(...pld.slice(0, 15)).trim() }));
     }
 
-    // Meter No
     if (state.chkMeterNo) {
-    setState(prev => ({ ...prev, inputMeterNo: "" })); // Clear input
-
-    const payload = buildOptReadPayload([5]);
-    const frame = buildEwmFrame(6, payload);
-
-    console.log("Send: " + bytesToHex(frame));
-    const receivedData = await sendAndReceiveQueued(connectedId, frame);
-    console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-    if (!receivedData || receivedData.length === 0) {
-      console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-      return;
+      setState(p => ({ ...p, inputMeterNo: '' }));
+      const pld = await send(5);
+      if (pld) setState(p => ({ ...p, inputMeterNo: String.fromCharCode(...pld.slice(0, 15)).trim() }));
     }
 
-    try {
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      const meterNoBytes = decryptedPayload.slice(0, 15);
-      const meterNo = String.fromCharCode(...meterNoBytes).trim();
-      console.log ('meterNoBytes ' + meterNoBytes)
-      console.log ('meterNo ' + meterNo)
-      setState(prev => ({ ...prev, inputMeterNo: meterNo }));
-    } catch (e: any) {
-      console.log("[Lỗi] Không thể giải mã payload: " + e.message);
-    }
-  }
-
-    // RTC
-   if (state.chkRTC) {
-    setState(prev => ({ ...prev, inputRTC: "" })); // Clear
-
-    const payload = buildOptReadPayload([1]);
-    const frame = buildEwmFrame(6, payload);
-
-    console.log("Send: " + bytesToHex(frame));
-    const receivedData = await sendAndReceiveQueued(connectedId, frame);
-    console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-    if (!receivedData || receivedData.length === 0) {
-      console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-      return;
+    if (state.chkRTC) {
+      setState(p => ({ ...p, inputRTC: '' }));
+      const pld = await send(1);
+      if (pld && pld.length >= 6) {
+        const dateObj = new Date(2000 + pld[0], pld[1] - 1, pld[2], pld[3], pld[4], pld[5]);
+        setState(p => ({ ...p, inputRTC: dateObj.toLocaleString() }));
+      }
     }
 
-    try {
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      const dt = decryptedPayload.slice(0, 6);
-
-      const year = 2000 + dt[0];
-      const month = dt[1];
-      const day = dt[2];
-      const hour = dt[3];
-      const minute = dt[4];
-      const second = dt[5];
-
-      const dateObj = new Date(year, month - 1, day, hour, minute, second);
-
-      setState(prev => ({
-        ...prev,
-        inputRTC: dateObj.toLocaleString(),
-      }));
-    } catch (e: any) {
-      console.log("[Lỗi] Không thể giải mã payload: " + e.message);
-    }
-
-
-
-  }
-      // Firmware Ver
     if (state.chkFirmwareVer) {
-      setState(prev => ({ ...prev, inputFirmwareVer: '' }));
-
-      const paramIds = [4];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-      const fwVerBytes = decryptedPayload.slice(0, 10);
-      const fwVer = String.fromCharCode(...fwVerBytes).trim();
-      setState(prev => ({ ...prev, inputFirmwareVer: fwVer }));
+      setState(p => ({ ...p, inputFirmwareVer: '' }));
+      const pld = await send(4);
+      if (pld) setState(p => ({ ...p, inputFirmwareVer: String.fromCharCode(...pld.slice(0, 10)).trim() }));
     }
 
-    // Boot Ver
     if (state.chkBootVer) {
-      setState(prev => ({ ...prev, inputBootVer: '' }));
-
-      const paramIds = [40];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-      const bootVerBytes = decryptedPayload.slice(0, 10);
-      const bootVer = String.fromCharCode(...bootVerBytes).trim();
-      setState(prev => ({ ...prev, inputBootVer: bootVer }));
+      setState(p => ({ ...p, inputBootVer: '' }));
+      const pld = await send(40);
+      if (pld) setState(p => ({ ...p, inputBootVer: String.fromCharCode(...pld.slice(0, 10)).trim() }));
     }
 
     if (state.chkImpData) {
-      // reset
-      setState(prev => ({
-        ...prev,
-        inputImpData: '',
-        inputExpData: '',
-        inputTotalData: '',
-      }));
-
-      /* ======================
-        ĐỌC IMP DATA (ID = 2)
-        ====================== */
-      const payloadImp = buildOptReadPayload([2]);
-      const frameImp = buildEwmFrame(6, payloadImp);
-
-      console.log('Send IMP:', bytesToHex(frameImp));
-      const recvImp = await sendAndReceiveQueued(connectedId, frameImp);
-
-      if (!recvImp || recvImp.length === 0) {
-        console.log('[Lỗi] Không nhận được IMP');
-        return;
+      setState(p => ({ ...p, inputImpData: '', inputExpData: '', inputTotalData: '' }));
+      const impPld = await send(2);
+      const expPld = await send(3);
+      if (impPld && expPld) {
+        const imp = readUInt32LE(impPld, 0);
+        const exp = readUInt32LE(expPld, 0);
+        setState(p => ({ ...p, inputImpData: imp.toString(), inputExpData: exp.toString(), inputTotalData: (imp - exp).toString() }));
       }
-
-      const impPayload = parseDecryptedPayload(new Uint8Array(recvImp));
-      const impData = readUInt32LE(impPayload, 0);
-
-      console.log('ImpData:', impData);
-
-      /* ======================
-        ĐỌC EXP DATA (ID = 3)
-        ====================== */
-      const payloadExp = buildOptReadPayload([3]);
-      const frameExp = buildEwmFrame(6, payloadExp);
-
-      console.log('Send EXP:', bytesToHex(frameExp));
-      const recvExp = await sendAndReceiveQueued(connectedId, frameExp);
-
-      if (!recvExp || recvExp.length === 0) {
-        console.log('[Lỗi] Không nhận được EXP');
-        return;
-      }
-
-      const expPayload = parseDecryptedPayload(new Uint8Array(recvExp));
-      const expData = readUInt32LE(expPayload, 0);
-
-      console.log('ExpData:', expData);
-
-      /* ======================
-        TÍNH TỔNG (KHÔNG GỬI TBI)
-        ====================== */
-      const totalData = impData - expData;
-
-      setState(prev => ({
-        ...prev,
-        inputImpData: impData.toString(),
-        inputExpData: expData.toString(),
-        inputTotalData: totalData.toString(),
-      }));
     }
 
-
-
-    // IPPORT
     if (state.chkIPPORT) {
-      setState(prev => ({ ...prev, inputIPPORT: '' }));
-
-      const payload = buildOptReadPayload([11]);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log('Send:', bytesToHex(frame));
-
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('Recv:', bytesToHex(receivedData || []));
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log('[Lỗi] Không nhận được phản hồi từ thiết bị');
-        return;
-      }
-
-      try {
-        const raw = new Uint8Array(receivedData);
-
-        // LOG RAW
-        console.log('RAW:', bytesToHex(raw));
-
-        // GIẢI MÃ
-        const decryptedPayload = parseDecryptedPayload(raw);
-
-        console.log('DECRYPTED:', bytesToHex(decryptedPayload));
-
-        if (25 <= decryptedPayload.length ) {
-          const ipPortBytes = decryptedPayload.slice(0, 25);
-
-          console.log('IPPORT HEX:', bytesToHex(ipPortBytes));
-
-          const ipPort = byteToAscii(ipPortBytes);
-
-          console.log('IP/PORT:', ipPort);
-
-          setState(prev => ({
-            ...prev,
-            inputIPPORT: ipPort,
-          }));
-        } else {
-          console.log('[Lỗi] Payload IP/PORT không đủ độ dài');
-        }
-      } catch (err) {
-        console.log('[Lỗi giải mã]', err);
-      }
+      setState(p => ({ ...p, inputIPPORT: '' }));
+      const pld = await send(11);
+      if (pld && pld.length >= 25) setState(p => ({ ...p, inputIPPORT: byteToAscii(pld.slice(0, 25)) }));
     }
-    // Latch Period
+
     if (state.chkLatchPeriod) {
-      setState(prev => ({ ...prev, inputLatchPeriod: '' }));
-
-      const payload = buildOptReadPayload([16]);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log('Send:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('Recv:', bytesToHex(receivedData || []), '\n');
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log('[Lỗi] Không nhận được phản hồi từ thiết bị\n');
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log('Payload:', bytesToHex(decryptedPayload), '\n');
-
-      if (decryptedPayload.length >= 2) {
-        const view = new DataView(decryptedPayload.buffer);
-        const latchPeriod = view.getInt16(0, true); // ✅ little-endian
-        setState(prev => ({
-          ...prev,
-          inputLatchPeriod: latchPeriod.toString(),
-        }));
-      }
+      setState(p => ({ ...p, inputLatchPeriod: '' }));
+      const pld = await send(16);
+      if (pld && pld.length >= 2) setState(p => ({ ...p, inputLatchPeriod: new DataView(pld.buffer).getInt16(0, true).toString() }));
     }
 
-        // Push Period
     if (state.chkPushPeriod) {
-      setState(prev => ({ ...prev, inputPushPeriod: '' }));
-
-      const payload = buildOptReadPayload([18]);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log('Send:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('Recv:', bytesToHex(receivedData || []), '\n');
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log('[Lỗi] Không nhận được phản hồi từ thiết bị\n');
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log('Payload:', bytesToHex(decryptedPayload), '\n');
-
-      if (decryptedPayload.length >= 2) {
-        const view = new DataView(decryptedPayload.buffer);
-        const pushPeriod = view.getInt16(0, true); // ✅ little-endian
-        setState(prev => ({
-          ...prev,
-          inputPushPeriod: pushPeriod.toString(),
-        }));
-      }
+      setState(p => ({ ...p, inputPushPeriod: '' }));
+      const pld = await send(18);
+      if (pld && pld.length >= 2) setState(p => ({ ...p, inputPushPeriod: new DataView(pld.buffer).getInt16(0, true).toString() }));
     }
 
-     if (state.chkTemp) {
-      setState(prev => ({ ...prev, inputTemp: '' }));
-
-      const paramIds = [22];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const temp = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputTemp: temp.toString() }));
-      }
+    if (state.chkTemp) {
+      setState(p => ({ ...p, inputTemp: '' }));
+      const pld = await send(22);
+      if (pld?.length) setState(p => ({ ...p, inputTemp: pld[0].toString() }));
     }
-      // ResetCount
+
     if (state.chkResetCount) {
-      setState(prev => ({ ...prev, inputResetCount: '' }));
-
-      const paramIds = [24];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const resetCount = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputResetCount: resetCount.toString() }));
-      }
+      setState(p => ({ ...p, inputResetCount: '' }));
+      const pld = await send(24);
+      if (pld?.length) setState(p => ({ ...p, inputResetCount: pld[0].toString() }));
     }
-    // Q3
+
     if (state.chkQ3) {
-      setState(prev => ({ ...prev, inputQ3: '' }));
-
-      const paramIds = [14];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log('Send:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('Recv:', bytesToHex(receivedData || []), '\n');
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log('[Lỗi] Không nhận được phản hồi từ thiết bị.\n');
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log('Payload:', bytesToHex(decryptedPayload), '\n');
-
-      // ✅ GIỐNG C#: BitConverter.ToInt32(...)
-      if (decryptedPayload.length >= 4) {
-        const view = new DataView(decryptedPayload.buffer);
-        const q3Value = view.getInt32(0, true); // ✅ little-endian
-        setState(prev => ({
-          ...prev,
-          inputQ3: q3Value.toString(),
-        }));
-      }
+      setState(p => ({ ...p, inputQ3: '' }));
+      const pld = await send(14);
+      if (pld && pld.length >= 4) setState(p => ({ ...p, inputQ3: new DataView(pld.buffer).getInt32(0, true).toString() }));
     }
-    // Push Method
-  
+
     if (state.chkPushEventIndex) {
-      setState(prev => ({ ...prev, inputPushEventIndex: '' }));
-
-      const payload = buildOptReadPayload([34]);
-      const frame = buildEwmFrame(6, payload);
-
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      if (!receivedData?.length) return;
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-
-      if (decryptedPayload.length >= 4) {
-        const value = new DataView(decryptedPayload.buffer)
-          .getUint32(0, true); // ✅
-        setState(prev => ({ ...prev, inputPushEventIndex: value.toString() }));
-      }
+      setState(p => ({ ...p, inputPushEventIndex: '' }));
+      const pld = await send(34);
+      if (pld && pld.length >= 4) setState(p => ({ ...p, inputPushEventIndex: new DataView(pld.buffer).getUint32(0, true).toString() }));
     }
-    
-    // LPR
+
     if (state.chkLPR) {
-      setState(prev => ({ ...prev, inputLPR: '' }));
-
-      const paramIds = [15];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const lprValue = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputLPR: lprValue.toString() }));
-      }
+      setState(p => ({ ...p, inputLPR: '' }));
+      const pld = await send(15);
+      if (pld?.length) setState(p => ({ ...p, inputLPR: pld[0].toString() }));
     }
 
-    // ModuleType
     if (state.chkModuleType) {
-      setState(prev => ({ ...prev, inputModuleType: '' }));
-
-      const paramIds = [13];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const moduleType = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputModuleType: moduleType.toString() }));
-      }
+      setState(p => ({ ...p, inputModuleType: '' }));
+      const pld = await send(13);
+      if (pld?.length) setState(p => ({ ...p, inputModuleType: pld[0].toString() }));
     }
 
-    // PushTime1
     if (state.chkPushTime1) {
-      setState(prev => ({ ...prev, inputPushTime1: '' }));
-
-      const paramIds = [19];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (1 < decryptedPayload.length) {
-        const pushTime1 = decryptedPayload[0].toString().padStart(2, '0') + ":" + decryptedPayload[1].toString().padStart(2, '0');
-        setState(prev => ({ ...prev, inputPushTime1: pushTime1 }));
-      }
+      setState(p => ({ ...p, inputPushTime1: '' }));
+      const pld = await send(19);
+      if (pld && pld.length >= 2) setState(p => ({ ...p, inputPushTime1: `${pld[0].toString().padStart(2,'0')}:${pld[1].toString().padStart(2,'0')}` }));
     }
 
-    // PushTime2
     if (state.chkPushTime2) {
-      setState(prev => ({ ...prev, inputPushTime2: '' }));
-
-      const paramIds = [20];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (1 < decryptedPayload.length) {
-        const pushTime2 = decryptedPayload[0].toString().padStart(2,'0') + ":" + decryptedPayload[1].toString().padStart(2, '0');
-        setState(prev => ({ ...prev, inputPushTime2: pushTime2 }));
-      }
+      setState(p => ({ ...p, inputPushTime2: '' }));
+      const pld = await send(20);
+      if (pld && pld.length >= 2) setState(p => ({ ...p, inputPushTime2: `${pld[0].toString().padStart(2,'0')}:${pld[1].toString().padStart(2,'0')}` }));
     }
 
-    // Temp
-   
-
-    // Voltage
     if (state.chkVoltage) {
-      setState(prev => ({ ...prev, inputVoltage: '' }));
-
-      const paramIds = [23];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const voltage = decryptedPayload[0];
-        const voltageValue = (voltage / 40.0).toFixed(2);
-        setState(prev => ({ ...prev, inputVoltage: voltageValue }));
-      }
+      setState(p => ({ ...p, inputVoltage: '' }));
+      const pld = await send(23);
+      if (pld?.length) setState(p => ({ ...p, inputVoltage: (pld[0] / 40.0).toFixed(2) }));
     }
 
-    // RemainBattery
     if (state.chkRemainBattery) {
-      setState(prev => ({ ...prev, inputRemainBattery: '' }));
-
-      const paramIds = [21];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log('Send:', bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log('Recv:', bytesToHex(receivedData || []), '\n');
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log('[Lỗi] Không nhận được phản hồi từ thiết bị.\n');
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log('Payload:', bytesToHex(decryptedPayload), '\n');
-
-      // ✅ GIỐNG C#: BitConverter.ToInt16(...)
-      if (decryptedPayload.length >= 2) {
-        const view = new DataView(decryptedPayload.buffer);
-        const dataValue = view.getInt16(0, true); // ✅ little-endian
-        setState(prev => ({
-          ...prev,
-          inputRemainBattery: dataValue.toString(),
-        }));
-      }
+      setState(p => ({ ...p, inputRemainBattery: '' }));
+      const pld = await send(21);
+      if (pld && pld.length >= 2) setState(p => ({ ...p, inputRemainBattery: new DataView(pld.buffer).getInt16(0, true).toString() }));
     }
 
-
-  
-
-    // LatDataIndex
     if (state.chkLatDataIndex) {
-      setState(prev => ({ ...prev, inputLatDataIndex: '' }));
-
-      const payload = buildOptReadPayload([31]);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send:", bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv:", bytesToHex(receivedData || []));
-
-      if (!receivedData || receivedData.length === 0) return;
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload:", bytesToHex(decryptedPayload));
-
-      if (decryptedPayload.length >= 4) {
-        const value = new DataView(decryptedPayload.buffer)
-          .getUint32(0, true); // ✅ LITTLE-ENDIAN
-        setState(prev => ({ ...prev, inputLatDataIndex: value.toString() }));
-      }
+      setState(p => ({ ...p, inputLatDataIndex: '' }));
+      const pld = await send(31);
+      if (pld && pld.length >= 4) setState(p => ({ ...p, inputLatDataIndex: new DataView(pld.buffer).getUint32(0, true).toString() }));
     }
 
-
-    // PushDataIndex
     if (state.chkPushDataIndex) {
-      setState(prev => ({ ...prev, inputPushDataIndex: '' }));
-
-      const payload = buildOptReadPayload([32]);
-      const frame = buildEwmFrame(6, payload);
-
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      if (!receivedData?.length) return;
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-
-      if (decryptedPayload.length >= 4) {
-        const value = new DataView(decryptedPayload.buffer)
-          .getUint32(0, true); // ✅
-        setState(prev => ({ ...prev, inputPushDataIndex: value.toString() }));
-      }
+      setState(p => ({ ...p, inputPushDataIndex: '' }));
+      const pld = await send(32);
+      if (pld && pld.length >= 4) setState(p => ({ ...p, inputPushDataIndex: new DataView(pld.buffer).getUint32(0, true).toString() }));
     }
 
-
-    // LatchEventIndex
     if (state.chkLatchEventIndex) {
-      setState(prev => ({ ...prev, inputLatchEventIndex: '' }));
-
-      const payload = buildOptReadPayload([33]);
-      const frame = buildEwmFrame(6, payload);
-
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      if (!receivedData?.length) return;
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-
-      if (decryptedPayload.length >= 4) {
-        const value = new DataView(decryptedPayload.buffer)
-          .getUint32(0, true); // ✅
-        setState(prev => ({ ...prev, inputLatchEventIndex: value.toString() }));
-      }
-    }
-
-
-    // PushEventIndex
-    
-
-
-    // NB
-    if (state.chkNB) {
-      setState(prev => ({
-        ...prev,
-        inputNBQCCID: '',
-        inputNBIMSI: '',
-        inputNBAPN: '',
-        inputNBMNO: '',
-        inputNBNETIP: '',
-        inputNBRSSI: '',
-      }));
-
-      const payload = buildOptReadPayload([35]);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send:", bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(
-        connectedId,
-        frame,
-        108,
-        120000
-      );
-      console.log("Recv:", bytesToHex(receivedData || []));
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(
-        new Uint8Array(receivedData)
-      );
-      console.log("Payload:", bytesToHex(decryptedPayload));
-
-      let offset = 0;
-
-      // QCCID [20 bytes ASCII]
-      const qccid = asciiBytesToString(
-        decryptedPayload.slice(offset, offset + 20)
-      );
-      offset += 20;
-
-      // IMSI [20 bytes ASCII]
-      const imsi = asciiBytesToString(
-        decryptedPayload.slice(offset, offset + 20)
-      );
-      offset += 20;
-
-      // APN [20 bytes ASCII]
-      const apn = asciiBytesToString(
-        decryptedPayload.slice(offset, offset + 20)
-      );
-      offset += 20;
-
-      // MNO [20 bytes ASCII]
-      const mno = asciiBytesToString(
-        decryptedPayload.slice(offset, offset + 20)
-      );
-      offset += 20;
-
-      // NETIP [15 bytes ASCII]
-      const netip = asciiBytesToString(
-        decryptedPayload.slice(offset, offset + 15)
-      );
-      offset += 15;
-
-      // RSSI [1 byte int]
-      const rssi = decryptedPayload[offset] & 0xff;
-
-      setState(prev => ({
-        ...prev,
-        inputNBQCCID: qccid,
-        inputNBIMSI: imsi,
-        inputNBAPN: apn,
-        inputNBMNO: mno,
-        inputNBNETIP: netip,
-        inputNBRSSI: rssi.toString(),
-      }));
+      setState(p => ({ ...p, inputLatchEventIndex: '' }));
+      const pld = await send(33);
+      if (pld && pld.length >= 4) setState(p => ({ ...p, inputLatchEventIndex: new DataView(pld.buffer).getUint32(0, true).toString() }));
     }
 
     if (state.chkVoltageThreshold) {
       setState(p => ({ ...p, inputVoltageThreshold: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([36]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const payload = parseDecryptedPayload(new Uint8Array(received));
-
-      if (payload.length >= 1) {
-        const voltage = payload[0] & 0xff;
-        const voltageThreshold = voltage / 10.0;
-        setState(p => ({
-          ...p,
-          inputVoltageThreshold: voltageThreshold.toFixed(1),
-        }));
-      }
+      const pld = await send(36);
+      if (pld?.length) setState(p => ({ ...p, inputVoltageThreshold: (pld[0] / 10.0).toFixed(1) }));
     }
-    
-    if (state.chkSensor1) {
-      setState(p => ({
-        ...p,
-        inputSensor1_MaxSa: '',
-        inputSensor1_MinSa: '',
-        inputSensor1_MaxSb: '',
-        inputSensor1_MinSb: '',
-        inputSensor1_MaxSc: '',
-        inputSensor1_MinSc: '',
-        inputSensor1_Average: '',
-      }));
 
-      const frame = buildEwmFrame(6, buildOptReadPayload([37]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 7) {
-        setState(p => ({
-          ...p,
-          inputSensor1_MaxSa: pld[0].toString(),
-          inputSensor1_MinSa: pld[1].toString(),
-          inputSensor1_MaxSb: pld[2].toString(),
-          inputSensor1_MinSb: pld[3].toString(),
-          inputSensor1_MaxSc: pld[4].toString(),
-          inputSensor1_MinSc: pld[5].toString(),
-          inputSensor1_Average: pld[6].toString(),
-        }));
-      }
-    }
-    if (state.chkSensor2) {
-      setState(p => ({
-        ...p,
-        inputSensor2_Numex1: '',
-        inputSensor2_Numex2: '',
-        inputSensor2_Maxch1: '',
-        inputSensor2_Minch1: '',
-        inputSensor2_Maxch2: '',
-        inputSensor2_Minch2: '',
-        inputSensor2_Average1: '',
-        inputSensor2_Average2: '',
-      }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([38]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 8) {
-        setState(p => ({
-          ...p,
-          inputSensor2_Numex1: pld[0].toString(),
-          inputSensor2_Numex2: pld[1].toString(),
-          inputSensor2_Maxch1: pld[2].toString(),
-          inputSensor2_Minch1: pld[3].toString(),
-          inputSensor2_Maxch2: pld[4].toString(),
-          inputSensor2_Minch2: pld[5].toString(),
-          inputSensor2_Average1: pld[6].toString(),
-          inputSensor2_Average2: pld[7].toString(),
-        }));
-      }
-    }
     if (state.chkBatteryCapacity) {
       setState(p => ({ ...p, inputBatteryCapacity: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([41]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 2) {
-        const value = new DataView(pld.buffer).getInt16(0, true);
-        setState(p => ({ ...p, inputBatteryCapacity: value.toString() }));
-      }
+      const pld = await send(41);
+      if (pld && pld.length >= 2) setState(p => ({ ...p, inputBatteryCapacity: new DataView(pld.buffer).getInt16(0, true).toString() }));
     }
+
     if (state.chkEventConfig) {
       setState(p => ({ ...p, inputEventConfig: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([26]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 1) {
-        setState(p => ({ ...p, inputEventConfig: pld[0].toString() }));
-      }
+      const pld = await send(26);
+      if (pld?.length) setState(p => ({ ...p, inputEventConfig: pld[0].toString() }));
     }
 
     if (state.chkRandomMin) {
       setState(p => ({ ...p, inputRandomMin: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([43]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 1) {
-        setState(p => ({ ...p, inputRandomMin: pld[0].toString() }));
-      }
+      const pld = await send(43);
+      if (pld?.length) setState(p => ({ ...p, inputRandomMin: pld[0].toString() }));
     }
+
     if (state.chkTimeZone) {
       setState(p => ({ ...p, inputTimeZone: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([44]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 1) {
-        setState(p => ({ ...p, inputTimeZone: pld[0].toString() }));
-      }
+      const pld = await send(44);
+      if (pld?.length) setState(p => ({ ...p, inputTimeZone: pld[0].toString() }));
     }
+
     if (state.chkQCCID) {
       setState(p => ({ ...p, inputQCCID: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([7]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      // QCCID = 20 bytes ASCII
-      const qccid = asciiBytesToString(pld.slice(0, 20));
-
-      setState(p => ({ ...p, inputQCCID: qccid }));
+      const pld = await send(7);
+      if (pld) setState(p => ({ ...p, inputQCCID: asciiBytesToString(pld.slice(0, 20)) }));
     }
-      if (state.chkPushMethod) {
-      setState(prev => ({ ...prev, inputPushMethod: '' }));
 
-      const paramIds = [17];
-      const payload = buildOptReadPayload(paramIds);
-      const frame = buildEwmFrame(6, payload);
-
-      console.log("Send: " + bytesToHex(frame));
-      const receivedData = await sendAndReceiveQueued(connectedId, frame);
-      console.log("Recv: " + bytesToHex(receivedData || []) + "\r\n");
-
-      if (!receivedData || receivedData.length === 0) {
-        console.log("[Lỗi] Không nhận được phản hồi từ thiết bị.\r\n");
-        return;
-      }
-
-      const decryptedPayload = parseDecryptedPayload(new Uint8Array(receivedData));
-      console.log("Payload: " + bytesToHex(decryptedPayload) + "\r\n");
-
-      if (0 < decryptedPayload.length) {
-        const pushMethod = decryptedPayload[0];
-        setState(prev => ({ ...prev, inputPushMethod: pushMethod.toString() }));
-      }
+    if (state.chkPushMethod) {
+      setState(p => ({ ...p, inputPushMethod: '' }));
+      const pld = await send(17);
+      if (pld?.length) setState(p => ({ ...p, inputPushMethod: pld[0].toString() }));
     }
+
     if (state.chkEnableDevice) {
       setState(p => ({ ...p, inputEnableDevice: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([28]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const payload = parseDecryptedPayload(new Uint8Array(received));
-
-      if (payload.length >= 1) {
-        const value = payload[0] & 0xff;
-        if (value === 0 || value === 1) {
-          setState(p => ({ ...p, inputEnableDevice: value.toString() }));
-        }
+      const pld = await send(28);
+      if (pld?.length) {
+        const v = pld[0] & 0xff;
+        if (v === 0 || v === 1) setState(p => ({ ...p, inputEnableDevice: v.toString() }));
       }
     }
+
     if (state.chkPushEventMethod) {
       setState(p => ({ ...p, inputPushEventMethod: '' }));
-
-      const frame = buildEwmFrame(6, buildOptReadPayload([42]));
-      const received = await sendAndReceiveQueued(connectedId, frame);
-
-      if (!received?.length) return;
-
-      const pld = parseDecryptedPayload(new Uint8Array(received));
-
-      if (pld.length >= 1) {
-        setState(p => ({ ...p, inputPushEventMethod: pld[0].toString() }));
-      }
+      const pld = await send(42);
+      if (pld?.length) setState(p => ({ ...p, inputPushEventMethod: pld[0].toString() }));
     }
 
     } catch (ex: any) {
@@ -1367,7 +631,7 @@ export const Write = async () => {
       }
     }
 
-    if (state.chkImpData) {
+    if (state.chkExpData) {
       const v = Number(state.inputExpData);
       if (Number.isInteger(v) && v >= 0 && v <= 0xffffffff) {
         const buf = new ArrayBuffer(4);
@@ -1375,7 +639,7 @@ export const Write = async () => {
         const payload = buildOptSetPayload([{ paramId: 3, data: Array.from(new Uint8Array(buf)) }]);
         const frame = buildEwmFrame(5, payload);
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        pushResult(!!recv?.length, 'ImpData');
+        pushResult(!!recv?.length, 'ExpData');
       }
     }
 
@@ -1616,60 +880,40 @@ export const Write = async () => {
     
 
     }
-      if (successList.length || errorList.length) {
-      let msg = '';
-
-      if (successList.length) {
-        msg += '✅ Ghi thành công:\n• ' + successList.join('\n• ') + '\n\n';
-      }
-
-      if (errorList.length) {
-        msg += '❌ Ghi thất bại:\n• ' + errorList.join('\n• ');
-      }
-
-      Alert.alert('Kết quả ghi dữ liệu', msg.trim());
-    }
     if (state.chkPushMethod) {
       const v = Number(state.inputPushMethod);
       if (v === 1 || v === 2) {
-        const payload = buildOptSetPayload([
-          { paramId: 17, data: [v] },
-        ]);
-
+        const payload = buildOptSetPayload([{ paramId: 17, data: [v] }]);
         const frame = buildEwmFrame(5, payload);
         const recv = await sendAndReceiveQueued(connectedId, frame);
         pushResult(!!recv?.length, 'PushMethod');
       }
     }
+
     if (state.chkEnableDevice) {
       const value = Number(state.inputEnableDevice);
-
       if (value === 0 || value === 1) {
-        const payload = buildOptSetPayload([
-          { paramId: 28, data: Uint8Array.from([value]) },
-        ]);
-
+        const payload = buildOptSetPayload([{ paramId: 28, data: Uint8Array.from([value]) }]);
         const frame = buildEwmFrame(5, payload);
-
         const recv = await sendAndReceiveQueued(connectedId, frame);
         pushResult(!!recv?.length, 'Enable Device');
-      } else {
-        console.log('❌ EnableDevice chỉ nhận 0 hoặc 1');
       }
     }
-     if (state.chkPushEventMethod) {
+
+    if (state.chkPushEventMethod) {
       const value = Number(state.inputPushEventMethod);
-
       if (value >= 0 && value <= 255) {
-        const payload = buildOptSetPayload([
-          { paramId: 42, data: Uint8Array.from([value]) },
-        ]);
-
+        const payload = buildOptSetPayload([{ paramId: 42, data: Uint8Array.from([value]) }]);
         const frame = buildEwmFrame(5, payload);
         const recv = await sendAndReceiveQueued(connectedId, frame);
         pushResult(!!recv?.length, 'Push Event Method');
-      } else {
-        console.log('❌ PushEventMethod không hợp lệ');
       }
+    }
+
+    if (successList.length || errorList.length) {
+      let msg = '';
+      if (successList.length) msg += '✅ Ghi thành công:\n• ' + successList.join('\n• ') + '\n\n';
+      if (errorList.length) msg += '❌ Ghi thất bại:\n• ' + errorList.join('\n• ');
+      Alert.alert('Kết quả ghi dữ liệu', msg.trim());
     }
 };
