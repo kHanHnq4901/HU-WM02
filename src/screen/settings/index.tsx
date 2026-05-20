@@ -55,7 +55,7 @@ export default function SettingsScreen() {
           <Text style={styles.versionLbl}>Phiên bản hiện tại</Text>
           <View style={styles.versionVal}>
             {state.loadingCurrentVersion
-              ? <ActivityIndicator size="small" color="#1976D2" />
+              ? <ActivityIndicator size="small" color="#1565C0" />
               : <Text style={styles.versionTxt}>{state.currentVersion || '---'}</Text>}
           </View>
         </View>
@@ -64,8 +64,8 @@ export default function SettingsScreen() {
           <Text style={styles.versionLbl}>Phiên bản mới nhất</Text>
           <View style={styles.versionVal}>
             {state.loadingRemoteVersion
-              ? <ActivityIndicator size="small" color="#1976D2" />
-              : <Text style={[styles.versionTxt, isNewVersion && { color: '#1976D2', fontWeight: '700' }]}>
+              ? <ActivityIndicator size="small" color="#1565C0" />
+              : <Text style={[styles.versionTxt, isNewVersion && { color: '#1565C0', fontWeight: '700' }]}>
                   {state.remoteVersion || '---'}
                 </Text>}
           </View>
@@ -76,7 +76,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         {isNewVersion && (
-          <TouchableOpacity style={[styles.btnGray, { backgroundColor: '#1976D2', marginTop: 6 }]} onPress={handleUpdateFirmware} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.btnGray, { backgroundColor: '#1565C0', marginTop: 6 }]} onPress={handleUpdateFirmware} activeOpacity={0.8}>
             <Text style={styles.btnTxt}>Cập nhật Firmware</Text>
           </TouchableOpacity>
         )}
@@ -101,51 +101,51 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9', padding: 8 },
+  container: { flex: 1, backgroundColor: '#F0F4F8', padding: 8 },
 
   card: {
     backgroundColor: '#fff', borderRadius: 10,
-    padding: 10, borderWidth: 1, borderColor: '#e0e0e0',
+    padding: 10, borderWidth: 1, borderColor: '#DDE3EB',
   },
-  cardTitle: { fontSize: 13, fontWeight: '700', color: '#555', marginBottom: 8, letterSpacing: 0.3 },
+  cardTitle: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 8, letterSpacing: 0.3 },
 
   option: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 10, paddingHorizontal: 10,
-    borderRadius: 8, marginBottom: 6,
-    borderWidth: 1, borderColor: '#e0e0e0',
+    borderRadius: 10, marginBottom: 6,
+    borderWidth: 1, borderColor: '#DDE3EB',
   },
-  optionOn:  { borderColor: '#1976D2', backgroundColor: '#E3F2FD' },
-  optionTxt: { fontSize: 14, marginLeft: 10, color: '#444', fontWeight: '500' },
+  optionOn:  { borderColor: '#1565C0', backgroundColor: '#EFF6FF' },
+  optionTxt: { fontSize: 14, marginLeft: 10, color: '#1E293B', fontWeight: '500' },
   optionTxtOn: { color: '#1565C0', fontWeight: '700' },
 
   radio: {
     width: 18, height: 18, borderRadius: 9,
-    borderWidth: 2, borderColor: '#bbb',
+    borderWidth: 2, borderColor: '#94A3B8',
     alignItems: 'center', justifyContent: 'center',
   },
-  radioOn:  { borderColor: '#1976D2' },
-  radioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#1976D2' },
+  radioOn:  { borderColor: '#1565C0' },
+  radioDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#1565C0' },
 
   versionRow: {
     flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 7, borderBottomWidth: 1, borderColor: '#f5f5f5',
+    paddingVertical: 7, borderBottomWidth: 1, borderColor: '#F0F4F8',
   },
-  versionLbl: { flex: 1, fontSize: 13, color: '#555' },
+  versionLbl: { flex: 1, fontSize: 13, color: '#64748B' },
   versionVal: { flexDirection: 'row', alignItems: 'center' },
-  versionTxt: { fontSize: 13, color: '#333', fontWeight: '600' },
+  versionTxt: { fontSize: 13, color: '#1E293B', fontWeight: '600' },
 
   btnGray: {
-    marginTop: 10, height: 44, backgroundColor: '#607D8B',
-    borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+    marginTop: 10, height: 46, backgroundColor: '#607D8B',
+    borderRadius: 10, justifyContent: 'center', alignItems: 'center',
   },
   btnTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
 
   progressBox: { marginTop: 12 },
   progressHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-  progressLbl: { fontSize: 13, fontWeight: '600', color: '#333' },
-  progressPct: { fontSize: 13, fontWeight: '700', color: '#1976D2' },
-  progressBg:   { height: 6, backgroundColor: '#e0e0e0', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: 6, backgroundColor: '#1976D2', borderRadius: 4 },
-  sizeTxt: { marginTop: 4, fontSize: 11, color: '#888', textAlign: 'right' },
+  progressLbl: { fontSize: 13, fontWeight: '600', color: '#1E293B' },
+  progressPct: { fontSize: 13, fontWeight: '700', color: '#1565C0' },
+  progressBg:   { height: 6, backgroundColor: '#DDE3EB', borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: 6, backgroundColor: '#1565C0', borderRadius: 4 },
+  sizeTxt: { marginTop: 4, fontSize: 11, color: '#64748B', textAlign: 'right' },
 });

@@ -20,7 +20,7 @@ const BleItem = (props: PropsItemBle) => {
       onPress={() => connectHandle(props.id, props.name)}
       activeOpacity={0.7}
     >
-      <View style={[styles.iconCircle, { backgroundColor: isConn ? '#388E3C' : '#1976D2' }]}>
+      <View style={[styles.iconCircle, { backgroundColor: isConn ? '#388E3C' : '#1565C0' }]}>
         <Text style={styles.iconTxt}>{isConn ? '✓' : '⬡'}</Text>
       </View>
       <View style={{ flex: 1 }}>
@@ -92,7 +92,7 @@ export default function BLEScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity
-          style={[styles.btn, { backgroundColor: '#1976D2', flex: 1 }]}
+          style={[styles.btn, { backgroundColor: '#1565C0', flex: 1 }]}
           onPress={onScanPress}
           activeOpacity={0.8}
         >
@@ -107,11 +107,11 @@ export default function BLEScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9' },
+  container: { flex: 1, backgroundColor: '#F0F4F8' },
   scroll: { padding: 8, paddingBottom: 72 },
 
   sectionTitle: {
-    fontSize: 11, fontWeight: '700', color: '#999',
+    fontSize: 11, fontWeight: '700', color: '#64748B',
     letterSpacing: 0.5, marginTop: 6, marginBottom: 4, marginLeft: 2,
   },
 
@@ -119,9 +119,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#fff', padding: 10,
     marginBottom: 6, borderRadius: 10,
-    borderWidth: 1, borderColor: '#e0e0e0',
+    borderWidth: 1, borderColor: '#DDE3EB',
   },
-  deviceCardConn: { borderColor: '#388E3C', borderLeftWidth: 3, backgroundColor: '#F1F8F1' },
+  deviceCardConn: { borderColor: '#388E3C', borderLeftWidth: 3, backgroundColor: '#F0FDF4' },
 
   iconCircle: {
     width: 36, height: 36, borderRadius: 18,
@@ -129,20 +129,20 @@ const styles = StyleSheet.create({
   },
   iconTxt: { fontSize: 16, color: '#fff', fontWeight: 'bold' },
 
-  devName: { fontSize: 14, fontWeight: '600', color: '#222' },
-  devId:   { fontSize: 11, color: '#999', marginTop: 1 },
+  devName: { fontSize: 14, fontWeight: '600', color: '#1E293B' },
+  devId:   { fontSize: 11, color: '#64748B', marginTop: 1 },
 
   rssiBox: { alignItems: 'flex-end', marginLeft: 8 },
   rssiBar: { fontSize: 11, fontWeight: 'bold' },
   rssiVal: { fontSize: 11, marginTop: 1 },
 
-  emptyTxt: { fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 24, fontStyle: 'italic' },
+  emptyTxt: { fontSize: 13, color: '#94A3B8', textAlign: 'center', marginTop: 24, fontStyle: 'italic' },
 
   bar: {
     flexDirection: 'row', padding: 8, gap: 8,
-    backgroundColor: '#f4f6f9', borderTopWidth: 1, borderColor: '#ddd',
+    backgroundColor: '#F0F4F8', borderTopWidth: 1, borderColor: '#DDE3EB',
   },
-  btn:    { height: 44, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  btn:    { height: 46, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   btnRow: { flexDirection: 'row', alignItems: 'center' },
   btnTxt: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

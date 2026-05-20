@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     marginBottom: scale(10),
     paddingBottom: scale(12),
     borderBottomWidth: 1,
-    borderColor: '#EEEEEE'
+    borderColor: '#DDE3EB'
   },
   systemTitle: {
     color: '#1565C0',

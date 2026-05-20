@@ -246,7 +246,7 @@ export default function Overview() {
 /* ══════════════════════════════════════════════════ */
 
 const s = StyleSheet.create({
-  root:   { flex:1, backgroundColor:'#f4f6f9' },
+  root:   { flex:1, backgroundColor:'#F0F4F8' },
   scroll: { paddingBottom:92 },
   pillRow: { flexDirection:'row', gap:6, marginHorizontal:8, marginTop:4, marginBottom:2, justifyContent:'flex-end' },
   pill:    { paddingHorizontal:10, paddingVertical:4, borderRadius:14 },
@@ -255,16 +255,16 @@ const s = StyleSheet.create({
   /* ── panel ── */
   panel: {
     margin:8, backgroundColor:'#fff',
-    borderRadius:10, borderWidth:1, borderColor:'#E8E8E8',
+    borderRadius:10, borderWidth:1, borderColor:'#DDE3EB',
     paddingBottom:8,
   },
   panelHead: {
     flexDirection:'row', alignItems:'center', justifyContent:'space-between',
     paddingHorizontal:10, paddingTop:8, paddingBottom:6,
   },
-  panelTitle: { fontSize:12, fontWeight:'700', color:'#888', letterSpacing:0.4 },
+  panelTitle: { fontSize:12, fontWeight:'700', color:'#64748B', letterSpacing:0.4 },
   panelActions: { flexDirection:'row', alignItems:'center', gap:4 },
-  actTxt: { fontSize:12, color:'#1976D2', fontWeight:'600' },
+  actTxt: { fontSize:12, color:'#1565C0', fontWeight:'600' },
   actDot: { fontSize:12, color:'#ccc' },
 
   /* group chips */
@@ -272,59 +272,59 @@ const s = StyleSheet.create({
   chip: {
     flexDirection:'row', alignItems:'center',
     paddingVertical:5, paddingHorizontal:10,
-    borderRadius:16, borderWidth:1, borderColor:'#D0D0D0',
-    backgroundColor:'#F7F7F7',
+    borderRadius:16, borderWidth:1, borderColor:'#DDE3EB',
+    backgroundColor:'#F8FAFC',
   },
-  chipOn:    { borderColor:'#1976D2', backgroundColor:'#E3F2FD' },
-  chipDot:   { fontSize:11, color:'#1976D2', fontWeight:'bold' },
-  chipTxt:   { fontSize:12, color:'#555' },
+  chipOn:    { borderColor:'#1565C0', backgroundColor:'#EFF6FF' },
+  chipDot:   { fontSize:11, color:'#1565C0', fontWeight:'bold' },
+  chipTxt:   { fontSize:12, color:'#64748B' },
   chipTxtOn: { color:'#1565C0', fontWeight:'700' },
 
-  divider: { height:1, backgroundColor:'#F0F0F0', marginVertical:7, marginHorizontal:10 },
+  divider: { height:1, backgroundColor:'#F0F4F8', marginVertical:7, marginHorizontal:10 },
 
   /* command chips */
   cmdWrap: { flexDirection:'row', alignItems:'center', flexWrap:'wrap', paddingHorizontal:8, gap:6 },
-  cmdHint: { fontSize:11, color:'#bbb' },
+  cmdHint: { fontSize:11, color:'#94A3B8' },
   cmdChip: {
     flexDirection:'row', alignItems:'center',
     paddingVertical:4, paddingHorizontal:10,
-    borderRadius:16, borderWidth:1, borderColor:'#D0D0D0',
-    backgroundColor:'#F7F7F7',
+    borderRadius:16, borderWidth:1, borderColor:'#DDE3EB',
+    backgroundColor:'#F8FAFC',
   },
   cmdChipOn: { borderColor:'#C62828', backgroundColor:'#FFF0F0' },
   cmdDot:    { fontSize:11, color:'#C62828', fontWeight:'bold' },
-  cmdTxt:    { fontSize:12, color:'#555' },
+  cmdTxt:    { fontSize:12, color:'#64748B' },
   cmdTxtOn:  { color:'#C62828', fontWeight:'700' },
 
   /* table */
   table: {
     marginHorizontal:8, marginTop:6,
     backgroundColor:'#fff',
-    borderRadius:10, borderWidth:1, borderColor:'#E8E8E8',
+    borderRadius:10, borderWidth:1, borderColor:'#DDE3EB',
     overflow:'hidden',
   },
   thead: { flexDirection:'row', backgroundColor:'#263238', paddingVertical:6, paddingHorizontal:10 },
   th:    { color:'#fff', fontSize:12, fontWeight:'700' },
-  tr:    { flexDirection:'row', alignItems:'center', borderBottomWidth:1, borderColor:'#F5F5F5', minHeight:48, paddingHorizontal:10, paddingVertical:6 },
-  tLbl:  { flex:1.1, fontSize:13, color:'#444', paddingRight:4 },
-  tIn:   { flex:1, height:36, borderWidth:1, borderColor:'#E0E0E0', borderRadius:5, paddingHorizontal:8, fontSize:13, color:'#222', backgroundColor:'#FAFAFA' },
-  tRO:   { backgroundColor:'#F5F5F5', color:'#999', borderColor:'#EEE' },
+  tr:    { flexDirection:'row', alignItems:'center', borderBottomWidth:1, borderColor:'#F0F4F8', minHeight:48, paddingHorizontal:10, paddingVertical:6 },
+  tLbl:  { flex:1.1, fontSize:13, color:'#1E293B', paddingRight:4 },
+  tIn:   { flex:1, height:36, borderWidth:1, borderColor:'#DDE3EB', borderRadius:8, paddingHorizontal:8, fontSize:13, color:'#1E293B', backgroundColor:'#F8FAFC' },
+  tRO:   { backgroundColor:'#F0F4F8', color:'#94A3B8', borderColor:'#DDE3EB' },
   radRow:{ flex:1, flexDirection:'row', flexWrap:'wrap', paddingVertical:4, gap:6 },
 
-  nowBtn: { paddingHorizontal:8, paddingVertical:4, borderRadius:5, borderWidth:1, borderColor:'#1976D2' },
-  nowOn:  { backgroundColor:'#1976D2' },
-  nowTxt: { fontSize:11, color:'#1976D2', fontWeight:'700' },
+  nowBtn: { paddingHorizontal:8, paddingVertical:4, borderRadius:6, borderWidth:1, borderColor:'#1565C0' },
+  nowOn:  { backgroundColor:'#1565C0' },
+  nowTxt: { fontSize:11, color:'#1565C0', fontWeight:'700' },
 
   /* bottom bar */
   bar: {
     position:'absolute', bottom:0, left:0, right:0,
     flexDirection:'row', padding:8, gap:8,
-    backgroundColor:'#f4f6f9', borderTopWidth:1, borderColor:'#ddd',
+    backgroundColor:'#F0F4F8', borderTopWidth:1, borderColor:'#DDE3EB',
   },
-  btn:    { flex:1, height:44, borderRadius:8, justifyContent:'center', alignItems:'center' },
-  btnR:   { backgroundColor:'#1976D2' },
-  btnW:   { backgroundColor:'#D32F2F' },
-  btnDis: { backgroundColor:'#BDBDBD' },
+  btn:    { flex:1, height:46, borderRadius:10, justifyContent:'center', alignItems:'center' },
+  btnR:   { backgroundColor:'#1565C0' },
+  btnW:   { backgroundColor:'#C62828' },
+  btnDis: { backgroundColor:'#B0BEC5' },
   bRow:   { flexDirection:'row', alignItems:'center' },
-  bTxt:   { color:'#fff', fontWeight:'bold', fontSize:15, letterSpacing:0.3 },
+  bTxt:   { color:'#fff', fontWeight:'bold', fontSize:14, letterSpacing:0.3 },
 });
