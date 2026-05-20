@@ -56,14 +56,6 @@ export default function DataScreen() {
     <View style={styles.container}>
       <SystemHeader title="ĐỌC DỮ LIỆU" subTitle="" />
 
-      {/* TRẠNG THÁI KẾT NỐI */}
-      <View style={styles.statusRow}>
-        <View style={[styles.statusDot, { backgroundColor: isConnected ? '#4CAF50' : '#F44336' }]} />
-        <Text style={[styles.statusText, { color: isConnected ? '#388E3C' : '#D32F2F' }]}>
-          {isConnected ? 'Đã kết nối thiết bị' : 'Chưa kết nối — không thể đọc dữ liệu'}
-        </Text>
-      </View>
-
       {/* NHẬP PHẠM VI */}
       <View style={styles.inputCard}>
         <View style={styles.inputRow}>
@@ -176,9 +168,7 @@ export default function DataScreen() {
               <Text style={[styles.btnText, { marginLeft: 8 }]}>DỪNG ĐỌC</Text>
             </View>
           ) : (
-            <Text style={styles.btnText}>
-              {isConnected ? 'ĐỌC DỮ LIỆU' : 'CHƯA KẾT NỐI'}
-            </Text>
+            <Text style={styles.btnText}>ĐỌC DỮ LIỆU</Text>
           )}
         </TouchableOpacity>
       </View>

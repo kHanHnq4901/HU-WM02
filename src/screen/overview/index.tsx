@@ -286,22 +286,6 @@ export default function Overview() {
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         <SystemHeader title="CẤU HÌNH" subTitle="ĐỌC / GHI CẤU HÌNH ĐỒNG HỒ" />
 
-        {/* TRẠNG THÁI KẾT NỐI */}
-        <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: connected ? '#4CAF50' : '#F44336' }]} />
-          <Text style={[styles.statusText, { color: connected ? '#388E3C' : '#D32F2F' }]}>
-            {connected ? 'Đã kết nối thiết bị' : 'Chưa kết nối — không thể đọc/ghi'}
-          </Text>
-          {busy && (
-            <View style={styles.busyBadge}>
-              <ActivityIndicator size="small" color="#1976D2" />
-              <Text style={styles.busyText}>
-                {state.isReading ? '  Đang đọc...' : '  Đang ghi...'}
-              </Text>
-            </View>
-          )}
-        </View>
-
         <View style={styles.selectRow}>
           <TouchableOpacity onPress={selectAll} disabled={busy}>
             <Text style={[styles.selectAll, busy && styles.disabledText]}>✔ Chọn tất cả</Text>

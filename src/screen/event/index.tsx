@@ -44,14 +44,6 @@ export default function EventScreen() {
     <View style={styles.container}>
       <SystemHeader title="ĐỌC SỰ KIỆN" subTitle="" />
 
-      {/* TRẠNG THÁI KẾT NỐI */}
-      <View style={styles.statusRow}>
-        <View style={[styles.statusDot, { backgroundColor: connected ? '#4CAF50' : '#F44336' }]} />
-        <Text style={[styles.statusText, { color: connected ? '#388E3C' : '#D32F2F' }]}>
-          {connected ? 'Đã kết nối thiết bị' : 'Chưa kết nối — không thể đọc'}
-        </Text>
-      </View>
-
       {/* NHẬP PHẠM VI */}
       <View style={styles.inputCard}>
         <View style={styles.inputRow}>
@@ -162,9 +154,7 @@ export default function EventScreen() {
               <Text style={[styles.btnText, { marginLeft: 8 }]}>DỪNG ĐỌC</Text>
             </View>
           ) : (
-            <Text style={styles.btnText}>
-              {connected ? 'ĐỌC SỰ KIỆN' : 'CHƯA KẾT NỐI'}
-            </Text>
+            <Text style={styles.btnText}>ĐỌC SỰ KIỆN</Text>
           )}
         </TouchableOpacity>
       </View>
