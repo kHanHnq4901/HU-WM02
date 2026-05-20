@@ -32,7 +32,7 @@ export default function Overview() {
 
   const hookProps = GetHookProps();
   const { state, setState } = hookProps;
-  const connected = store?.state?.hhu?.isConnected ?? false;
+  const connected = store?.state?.hhu?.connect === 'CONNECTED';
   const busy = state.isReading || state.isWriting;
 
   /* ================= FIELD LIST ================= */

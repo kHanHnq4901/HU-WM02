@@ -589,6 +589,7 @@ export const Write = async () => {
   }
 
   setState(p => ({ ...p, isWriting: true }));
+  try {
     const successList: string[] = [];
     const errorList: string[] = [];
     const pushResult = (ok: boolean, name: string, err?: any) => {
@@ -929,12 +930,13 @@ export const Write = async () => {
       }
     }
 
-    setState(p => ({ ...p, isWriting: false }));
-
     if (successList.length || errorList.length) {
       let msg = '';
       if (successList.length) msg += 'Thành công:\n• ' + successList.join('\n• ') + '\n\n';
       if (errorList.length) msg += 'Thất bại:\n• ' + errorList.join('\n• ');
       Alert.alert('Kết quả ghi', msg.trim());
     }
+  } finally {
+    setState(p => ({ ...p, isWriting: false }));
+  }
 };
