@@ -12,7 +12,7 @@ import { EventItem, GetHookProps, store } from './controller';
 import { onReadEvent } from './handleButton';
 import SystemHeader from '../../component/SystemHeader';
 
-const ITEM_HEIGHT = 44;
+const ITEM_HEIGHT = 38;
 
 const EventRow = React.memo(({ item }: { item: EventItem }) => (
   <View style={styles.tableRow}>
@@ -163,51 +163,51 @@ export default function EventScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9', padding: 10 },
+  container: { flex: 1, backgroundColor: '#f4f6f9', padding: 8 },
 
-  statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, paddingHorizontal: 4 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, paddingHorizontal: 2 },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  statusText: { fontSize: 13, fontWeight: '500' },
+  statusText: { fontSize: 12, fontWeight: '500' },
 
   inputCard: {
-    backgroundColor: '#fff', borderRadius: 8, padding: 12,
-    marginBottom: 10, borderWidth: 1, borderColor: '#ddd',
+    backgroundColor: '#fff', borderRadius: 8, padding: 8,
+    marginBottom: 6, borderWidth: 1, borderColor: '#ddd',
   },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end' },
   inputGroup: { flex: 1 },
-  inputLabel: { fontSize: 12, color: '#666', marginBottom: 4, fontWeight: '500' },
+  inputLabel: { fontSize: 11, color: '#666', marginBottom: 3, fontWeight: '500' },
   input: {
-    height: 40, borderWidth: 1, borderColor: '#ccc', borderRadius: 6,
-    paddingHorizontal: 10, fontSize: 15, backgroundColor: '#fff', color: '#333',
+    height: 34, borderWidth: 1, borderColor: '#ccc', borderRadius: 6,
+    paddingHorizontal: 8, fontSize: 14, backgroundColor: '#fff', color: '#333',
   },
   inputDisabled: { backgroundColor: '#f5f5f5', color: '#999' },
-  inputSeparator: { paddingHorizontal: 8, paddingBottom: 10, justifyContent: 'flex-end' },
-  separatorText: { fontSize: 16, color: '#aaa' },
-  rangeHint: { marginTop: 6, fontSize: 11, color: '#aaa', textAlign: 'right' },
+  inputSeparator: { paddingHorizontal: 6, paddingBottom: 8, justifyContent: 'flex-end' },
+  separatorText: { fontSize: 14, color: '#aaa' },
+  rangeHint: { marginTop: 4, fontSize: 10, color: '#aaa', textAlign: 'right' },
 
   progressCard: {
-    backgroundColor: '#E8F5E9', borderRadius: 8, padding: 10,
-    marginBottom: 10, borderWidth: 1, borderColor: '#C8E6C9',
+    backgroundColor: '#E8F5E9', borderRadius: 8, padding: 8,
+    marginBottom: 6, borderWidth: 1, borderColor: '#C8E6C9',
   },
-  progressTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  progressLabel: { flex: 1, fontSize: 13, color: '#2E7D32', fontWeight: '500' },
-  progressPercent: { fontSize: 13, color: '#2E7D32', fontWeight: '700' },
-  progressBarBg: { height: 6, backgroundColor: '#C8E6C9', borderRadius: 4, overflow: 'hidden', marginBottom: 4 },
-  progressBarFill: { height: 6, backgroundColor: '#388E3C', borderRadius: 4 },
-  progressSub: { fontSize: 11, color: '#2E7D32', textAlign: 'right' },
+  progressTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  progressLabel: { flex: 1, fontSize: 12, color: '#2E7D32', fontWeight: '500' },
+  progressPercent: { fontSize: 12, color: '#2E7D32', fontWeight: '700' },
+  progressBarBg: { height: 5, backgroundColor: '#C8E6C9', borderRadius: 4, overflow: 'hidden', marginBottom: 3 },
+  progressBarFill: { height: 5, backgroundColor: '#388E3C', borderRadius: 4 },
+  progressSub: { fontSize: 10, color: '#2E7D32', textAlign: 'right' },
 
   tableHeaderRow: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#388E3C', borderRadius: 6,
-    paddingVertical: 8, paddingLeft: 0, paddingRight: 8, marginBottom: 2,
+    paddingVertical: 6, paddingLeft: 0, paddingRight: 6, marginBottom: 1,
   },
   tableHeaderLeft: { flex: 1, flexDirection: 'row' },
-  col: { flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 12, textAlign: 'center' },
+  col: { flex: 1, color: '#fff', fontWeight: 'bold', fontSize: 11, textAlign: 'center' },
   clearBtn: {
-    backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 10,
-    paddingVertical: 4, borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.25)', paddingHorizontal: 8,
+    paddingVertical: 3, borderRadius: 10,
   },
-  clearBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  clearBtnText: { color: '#fff', fontSize: 11, fontWeight: '600' },
 
   tableRow: {
     flexDirection: 'row', backgroundColor: '#fff',
@@ -217,24 +217,24 @@ const styles = StyleSheet.create({
   cell: { flex: 1, fontSize: 12, textAlign: 'center', color: '#333' },
 
   emptyContainer: { flex: 1, justifyContent: 'center' },
-  emptyState: { alignItems: 'center', marginTop: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#aaa', marginBottom: 8 },
-  emptySubTitle: { fontSize: 13, color: '#bbb', textAlign: 'center' },
+  emptyState: { alignItems: 'center', marginTop: 40 },
+  emptyTitle: { fontSize: 15, fontWeight: '600', color: '#aaa', marginBottom: 6 },
+  emptySubTitle: { fontSize: 12, color: '#bbb', textAlign: 'center' },
 
   bottomBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: 12, backgroundColor: '#f4f6f9',
+    padding: 8, backgroundColor: '#f4f6f9',
     borderTopWidth: 1, borderColor: '#ddd',
   },
   countBadge: {
-    alignSelf: 'center', marginBottom: 6,
-    backgroundColor: '#E8F5E9', paddingHorizontal: 12, paddingVertical: 3,
-    borderRadius: 12, borderWidth: 1, borderColor: '#C8E6C9',
+    alignSelf: 'center', marginBottom: 4,
+    backgroundColor: '#E8F5E9', paddingHorizontal: 10, paddingVertical: 2,
+    borderRadius: 10, borderWidth: 1, borderColor: '#C8E6C9',
   },
-  countText: { fontSize: 12, color: '#388E3C', fontWeight: '600' },
-  btnRead: { height: 48, backgroundColor: '#388E3C', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  countText: { fontSize: 11, color: '#388E3C', fontWeight: '600' },
+  btnRead: { height: 44, backgroundColor: '#388E3C', borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
   btnStop: { backgroundColor: '#D32F2F' },
   btnDisabled: { backgroundColor: '#9E9E9E' },
   btnInner: { flexDirection: 'row', alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
 });
