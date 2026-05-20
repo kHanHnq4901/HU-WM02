@@ -14,8 +14,7 @@ export type HookState = {
   fromValue: string;
   toValue: string;
   dataList: DataItem[];
-  isReading: boolean;   // 🔥 đang đọc
-  stopRead: boolean;    // 🔥 yêu cầu dừng
+  isReading: boolean;
 };
 
 export type HookProps = {
@@ -33,7 +32,6 @@ export const GetHookProps = (): HookProps => {
     toValue: '10',
     dataList: [],
     isReading: false,
-    stopRead: false,
   });
 
 

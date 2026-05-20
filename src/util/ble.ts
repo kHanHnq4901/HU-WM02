@@ -2,22 +2,16 @@ import { Alert, PermissionsAndroid, Platform } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import { Buffer } from 'buffer';
 import { crc16 } from './crc16';
-import {
-  buildEwmFrame,
-  buildOptReadPayload,
-  parseDecryptedPayload,
-} from './EwmFrameBuilder';
 import { sleep } from '.';
 import { store } from '../screen/overview/controller';
-import { setStatus } from '../screen/ble/controller';
-import { connectHandle } from '../screen/ble/handleButton';
 
 const TAG = 'Ble.ts';
 
 let service = '';
 let characteristic = '';
+let rxBuffer: number[] = [];
 
-/* ================= PERMISSION ================= */
+/* ================= PERMISSIONS ================= */
 
 export async function requestBlePermission(): Promise<boolean> {
   if (Platform.OS === 'android' && Platform.Version >= 23) {
@@ -29,13 +23,14 @@ export async function requestBlePermission(): Promise<boolean> {
   return true;
 }
 
-/* ================= CONNECT ================= */
+/* ================= CONNECT & NOTIFY ================= */
 
 export async function connect(id: string): Promise<boolean> {
   for (let i = 0; i < 2; i++) {
     try {
       await BleManager.stopScan();
       await BleManager.connect(id);
+      await BleManager.requestMTU(id, 256); // MTU lớn giúp gửi OTA/Frame mượt hơn
       return true;
     } catch (e) {
       console.log(TAG, 'Connect retry', e);
@@ -44,8 +39,6 @@ export async function connect(id: string): Promise<boolean> {
   }
   return false;
 }
-
-/* ================= NOTIFICATION ================= */
 
 export async function startNotification(id: string) {
   const res: any = await BleManager.retrieveServices(id);
@@ -60,50 +53,42 @@ export async function startNotification(id: string) {
   await BleManager.startNotification(id, service, characteristic);
 }
 
-export async function stopNotification(id: string) {
-  await BleManager.stopNotification(id, service, characteristic);
-}
-
-/* ================= FRAME SEND ================= */
+/* ================= FRAME SEND INTERNAL ================= */
 
 async function sendFrameInternal(id: string, data: number[]) {
   const payload = Uint8Array.from(data);
   const crcPayload = crc16(Buffer.from(payload), payload.length);
-
   const body = [...data, crcPayload & 0xff, (crcPayload >> 8) & 0xff];
-  const header = [0xaa, 0x01, body.length & 0xff, body.length >> 8];
+  const header = [0xaa, 0x01, body.length & 0xff, (body.length >> 8) & 0xff];
   const base = [...header, ...body];
-
   const crcFrame = crc16(Buffer.from(base), base.length);
-  const frame = [...base, crcFrame & 0xff, crcFrame >> 8, 0x4f, 0x4b, 0x45];
+  const frame = [...base, crcFrame & 0xff, (crcFrame >> 8) & 0xff, 0x4f, 0x4b, 0x45];
 
-  console.log("📤 FULL FRAME LENGTH:", frame.length);
+  console.log("📤 Gửi gói tin Frame, tổng độ dài:", frame.length);
 
-  const MTU = 256;
-
-  for (let i = 0; i < frame.length; i += MTU) {
-    const chunk = frame.slice(i, i + MTU);
-
-    console.log(
-      `📤 SEND CHUNK ${i / MTU + 1}:`,
-      chunk.length
-    );
-
-    await BleManager.write(
-      id,
-      service,
-      characteristic,
-      chunk,
-      MTU,
-    );
-
-    // nếu thiết bị yếu nên mở cái này
-    // await sleep(5);
+  const WRITE_CHUNK_SIZE = 128;
+  for (let i = 0; i < frame.length; i += WRITE_CHUNK_SIZE) {
+    const chunk = frame.slice(i, i + WRITE_CHUNK_SIZE);
+    await BleManager.write(id, service, characteristic, chunk);
+    if (frame.length > WRITE_CHUNK_SIZE) await sleep(20); // Giảm sleep xuống xíu để mượt hơn
   }
 }
 
+export async function sendRawBle(id: string, data: Uint8Array) {
+  const body = Array.from(data);
+  const header = [0xaa, 0x01, body.length & 0xff, (body.length >> 8) & 0xff];
+  const base = [...header, ...body];
+  const crcFrame = crc16(Buffer.from(base), base.length);
+  const finalFrame = [...base, crcFrame & 0xff, (crcFrame >> 8) & 0xff, 0x4f, 0x4b, 0x45];
 
-/* ================= QUEUE SEND ================= */
+  const CHUNK = 128;
+  for (let i = 0; i < finalFrame.length; i += CHUNK) {
+    await BleManager.write(id, service, characteristic, finalFrame.slice(i, i + CHUNK));
+    await sleep(20);
+  }
+}
+
+/* ================= QUEUE SYSTEM ================= */
 
 interface BleTask {
   frame: number[];
@@ -113,263 +98,207 @@ interface BleTask {
 }
 
 const taskQueue: BleTask[] = [];
-let sending = false;
+let isProcessing = false;
 
 export function sendAndReceiveQueued(
   id: string,
   frame: Uint8Array | number[],
-  timeout = 500,
+  timeout = 5000,
 ): Promise<number[]> {
   return new Promise((resolve, reject) => {
-    const data =
-      frame instanceof Uint8Array ? Array.from(frame) : frame;
-
+    const data = frame instanceof Uint8Array ? Array.from(frame) : frame;
     taskQueue.push({ frame: data, timeout, resolve, reject });
     processQueue(id);
   });
 }
 
 async function processQueue(id: string) {
-  if (sending || taskQueue.length === 0) return;
-  sending = true;
+  if (isProcessing || taskQueue.length === 0) return;
+  isProcessing = true;
 
   const task = taskQueue.shift()!;
   try {
-    const waitAck = waitBleAck(400);
-    const waitEwm = waitEwmResponse(task.timeout);
-
+    rxBuffer = [];
+    const ackPromise = waitBleAck(1000);
+    const ewmPromise = waitEwmResponse(task.timeout);
     await sendFrameInternal(id, task.frame);
-
-    await waitAck; // ACK có hoặc không đều OK
-    const resp = await waitEwm;
-
+    await ackPromise;
+    const resp = await ewmPromise;
     task.resolve(resp);
-  } catch (e) {
+  } catch (e: any) {
+    // Clear pending callbacks so they don't bleed into the next task
+    ackQueue.length = 0;
+    ewmQueue.length = 0;
+    rxBuffer = [];
     task.reject(e);
   } finally {
-    sending = false;
-    processQueue(id);
+    isProcessing = false;
+    if (taskQueue.length > 0) setTimeout(() => processQueue(id), 0);
   }
 }
 
-/* ================= RX BUFFER ================= */
-
-let rxBuffer: number[] = [];
-
-/* ================= ACK QUEUE ================= */
-
-const ackQueue: ((status: number) => void)[] = [];
-
-export function waitBleAck(timeout = 500): Promise<number> {
-  return new Promise(resolve => {
-    ackQueue.push(resolve);
-
-    setTimeout(() => {
-      const i = ackQueue.indexOf(resolve);
-      if (i !== -1) ackQueue.splice(i, 1);
-      resolve(0); // ACK không về không phải lỗi
-    }, timeout);
-  });
-}
+/* ================= DATA PARSERS ================= */
 
 function findAck(buf: number[]) {
   for (let i = 0; i <= buf.length - 6; i++) {
-    if (
-      buf[i] === 0xaa &&
-      buf[i + 1] === 0x01 &&
-      buf[i + 5] === 0x55
-    ) {
-      return {
-        index: i,
-        frame: buf.slice(i, i + 6),
-        length: 6,
-      };
+    if (buf[i] === 0xaa && buf[i + 1] === 0x01 && buf[i + 5] === 0x55) {
+      return { index: i, length: 6 };
     }
   }
   return null;
 }
 
+function findEwm(buf: number[]) {
+  const HEADER = [0x2a, 0x45, 0x57, 0x4d, 0x30, 0x32]; // *EWM02
+  for (let i = 0; i <= buf.length - HEADER.length; i++) {
+    let match = true;
+    for (let j = 0; j < HEADER.length; j++) {
+      if (buf[i + j] !== HEADER[j]) { match = false; break; }
+    }
+    if (!match) continue;
 
+    const lenSerIndex = i + 7;
+    if (buf.length <= lenSerIndex) return null;
+    const lenSerial = buf[lenSerIndex];
 
-/* ================= EWM QUEUE ================= */
+    const lenPayIndex = i + 8 + lenSerial;
+    if (buf.length <= lenPayIndex) return null;
+    const lenPayload = buf[lenPayIndex];
 
+    const encryptedLen = lenPayload < 16 ? 16 : lenPayload;
+    const totalLen = 6 + 1 + 1 + lenSerial + 1 + encryptedLen + 1 + 2;
+
+    if (buf.length < i + totalLen) return null;
+
+    return { index: i, length: totalLen, frame: buf.slice(i, i + totalLen) };
+  }
+  return null;
+}
+
+// Hàm trích xuất Text an toàn, tránh lỗi Call Stack
+function findRawText(buf: number[]) {
+  // Chỉ chuyển đổi tối đa 512 bytes đầu tiên để tránh tràn bộ nhớ
+  const checkLimit = Math.min(buf.length, 512);
+  const text = String.fromCharCode(...buf.slice(0, checkLimit));
+  const match = text.match(/(SUCCESS|FAIL|F\d+)/);
+  
+  if (match) {
+    return {
+      index: text.indexOf(match[0]),
+      length: match[0].length,
+      text: match[0]
+    };
+  }
+  return null;
+}
+
+/* ================= ON BLE DATA ================= */
+
+export function onBleData({ value }: { value: number[] }) {
+  rxBuffer.push(...value);
+
+  // Bảo vệ bộ nhớ: Chống tràn mảng do rác BLE
+  if (rxBuffer.length > 4096) {
+    console.warn("⚠️ Buffer quá đầy, đang xoá bớt dữ liệu rác!");
+    rxBuffer = rxBuffer.slice(-1024); // Chỉ giữ lại 1024 bytes mới nhất
+  }
+
+  let processing = true;
+  while (processing) {
+    processing = false;
+
+    // 1. Kiểm tra ACK
+    const ack = findAck(rxBuffer);
+    if (ack) {
+      if (ackQueue.length > 0) ackQueue.shift()?.(1);
+      rxBuffer.splice(0, ack.index + ack.length);
+      processing = true;
+      continue;
+    }
+
+    // 2. Kiểm tra EWM Response
+    const ewm = findEwm(rxBuffer);
+    if (ewm) {
+      console.log(`📦 Đã nhận EWM Frame: ${ewm.length} bytes`);
+      if (ewmQueue.length > 0) ewmQueue.shift()?.(ewm.frame);
+      rxBuffer.splice(0, ewm.index + ewm.length);
+      processing = true;
+      continue;
+    }
+
+    // 3. Kiểm tra Raw Text (SUCCESS/FAIL/F...)
+    const textData = findRawText(rxBuffer);
+    if (textData) {
+      if (rawTextQueue.length > 0) rawTextQueue.shift()?.(textData.text);
+      rxBuffer.splice(0, textData.index + textData.length);
+      processing = true;
+      continue;
+    }
+  }
+}
+
+/* ================= QUEUE HELPERS ================= */
+
+const ackQueue: ((status: number) => void)[] = [];
 const ewmQueue: ((data: number[]) => void)[] = [];
+const rawTextQueue: ((data: string) => void)[] = []; // Sửa kiểu dữ liệu callback
 
-export function waitEwmResponse(timeout = 5000): Promise<number[]> {
-  return new Promise((resolve, reject) => {
-    ewmQueue.push(resolve);
-
-    setTimeout(() => {
-      const i = ewmQueue.indexOf(resolve);
-      if (i !== -1) ewmQueue.splice(i, 1);
-      reject(new Error('EWM timeout'));
+export function waitBleAck(timeout: number): Promise<number> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => {
+      const idx = ackQueue.indexOf(callback);
+      if (idx !== -1) ackQueue.splice(idx, 1);
+      resolve(0); // Timeout ACK không coi là lỗi
     }, timeout);
+
+    const callback = (s: number) => {
+      clearTimeout(timer);
+      resolve(s);
+    };
+    ackQueue.push(callback);
   });
 }
 
-const HEADER = [0x2a, 0x45, 0x57, 0x4d, 0x30, 0x32]; // *EWM02
+export function waitEwmResponse(timeout: number): Promise<number[]> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      const idx = ewmQueue.indexOf(callback);
+      if (idx !== -1) ewmQueue.splice(idx, 1);
+      reject(new Error('EWM timeout'));
+    }, timeout);
 
-function findEwm(buf: number[]) {
-  for (let i = 0; i <= buf.length - HEADER.length; i++) {
-    let match = true;
-
-    for (let j = 0; j < HEADER.length; j++) {
-      if (buf[i + j] !== HEADER[j]) {
-        match = false;
-        break;
-      }
-    }
-
-    if (!match) continue;
-
-    // ví dụ tối thiểu 10 byte để tránh false positive
-    if (buf.length - i < 10) return null;
-
-    return {
-      index: i,
-      length: buf.length - i,
-      frame: buf.slice(i),
+    const callback = (d: number[]) => {
+      clearTimeout(timer);
+      resolve(d);
     };
-  }
-
-  return null;
+    ewmQueue.push(callback);
+  });
 }
 
-
-
-
-export function onBleData({ value }: { value: number[] }) {
-  console.log('📥 BLE RAW:', bytesToHex(value));
-
-  rxBuffer.push(...value);
-
-  // ================= ACK =================
-  while (true) {
-    const ack = findAck(rxBuffer);
-    if (!ack) break;
-
-    console.log("✅ ACK:", bytesToHex(ack.frame));
-
-    ackQueue.shift()?.(1);
-    rxBuffer.splice(ack.index, ack.length);
-  }
-
-  // ================= EWM =================
-  while (true) {
-    const ewm = findEwm(rxBuffer);
-    if (!ewm) break;
-
-    console.log('📦 EWM:', bytesToHex(ewm.frame));
-
-    ewmQueue.shift()?.(ewm.frame);
-    rxBuffer.splice(ewm.index, ewm.length);
-  }
-
-  // ================= RAW TEXT (FIXED) =================
-  // Cắt phần ACK và EWM ở trên giữ nguyên...
-
-  // ================= RAW TEXT (ĐÃ SỬA LẠI LOGIC PARSE) =================
-  try {
-    // Ép mảng buffer thành chuỗi
-    const text = String.fromCharCode(...rxBuffer).trim();
-    
-    // Tìm kiếm các từ khóa đặc biệt mà Bootloader trả về thay vì so sánh toàn bộ
-    const match = text.match(/(SUCCESS|FAIL|RESPONSE_FAIL|F\d+)/);
-
-    if (match) {
-      const extractedCmd = match[0]; // Lấy từ khóa bắt được (vd: "F1", "SUCCESS")
-      console.log("📥 Bắt được RAW TEXT:", extractedCmd);
-
-      if (rawTextQueue.length > 0) {
-        rawTextQueue.shift()?.(extractedCmd);
-      }
-
-      rxBuffer = []; // Chỉ clear buffer khi đã bắt đúng lệnh
-    }
-  } catch (e) {
-    // ignore
-  }
-}
-
-
-/* ================= RAW TEXT QUEUE ================= */
-
-const rawTextQueue: ((data: string) => void)[] = [];
-
+// 🔥 Fix triệt để lỗi Memory Leak và Timeout ảo ở hàm này
 export function waitRawText(timeout = 5000): Promise<string> {
   return new Promise((resolve, reject) => {
-
-    rawTextQueue.push(resolve);
-
-    setTimeout(() => {
-      const i = rawTextQueue.indexOf(resolve);
-      if (i !== -1) rawTextQueue.splice(i, 1);
+    const timer = setTimeout(() => {
+      const idx = rawTextQueue.indexOf(callback);
+      if (idx !== -1) rawTextQueue.splice(idx, 1);
       reject(new Error("RAW timeout"));
     }, timeout);
 
+    const callback = (text: string) => {
+      clearTimeout(timer);
+      resolve(text);
+    };
+    rawTextQueue.push(callback);
   });
 }
 
-
-
+/* ================= UTILS ================= */
 
 export function bytesToHex(data?: number[] | Uint8Array) {
   if (!data) return '';
-  return Array.from(data)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join(' ')
-    .toUpperCase();
+  return Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
 }
-export async function sendRawBle(
-  id: string,
-  data: Uint8Array,
-) {
-  // 1. Tạo Frame có chứa "O K E" để kích hoạt xử lý ở mạch
-  const payloadArray = Array.from(data);
-  const crcPayload = crc16(Buffer.from(data), data.length);
-  const body = [...payloadArray, crcPayload & 0xff, (crcPayload >> 8) & 0xff];
-  const header = [0xaa, 0x01, body.length & 0xff, body.length >> 8];
-  const base = [...header, ...body];
-  const crcFrame = crc16(Buffer.from(base), base.length);
-  
-  // Gắn đuôi EXT (O K E) để mạch biết đã hết 1 Frame
-  const finalFrame = [
-    ...base, 
-    crcFrame & 0xff, 
-    crcFrame >> 8, 
-    0x4f, // Chữ 'O'
-    0x4b, // Chữ 'K'
-    0x45  // Chữ 'E'
-  ];
 
-  //console.log("📤 BLE FRAMED LENGTH (TOTAL):", finalFrame.length);
-
-  // 2. Chẻ nhỏ Frame theo đúng giới hạn của BLE (128 bytes)
-  const WRITE_CHUNK_SIZE = 128;
-
-  for (let i = 0; i < finalFrame.length; i += WRITE_CHUNK_SIZE) {
-    const chunk = finalFrame.slice(i, i + WRITE_CHUNK_SIZE);
-
-    // console.log(
-    //   `📤 Gửi Chunk ${Math.floor(i / WRITE_CHUNK_SIZE) + 1}: ${chunk.length} bytes`
-    // );
-
-    // Gửi từng phần nhỏ xuống cho mạch lưu dần vào bộ nhớ đệm
-    await BleManager.write(
-      id,
-      service,
-      characteristic,
-      chunk,
-      chunk.length
-    );
-
-    // ⚠️ RẤT QUAN TRỌNG: 
-    // Vì gửi lượng data lớn (128 bytes/lần), bạn phải cho mạch một khoảng 
-    // thời gian ngắn (30ms - 50ms) để nó kịp chép vào bộ nhớ đệm (buffer), 
-    // tránh tình trạng bị mất byte khiến mạch không bao giờ tìm thấy chữ "O K E".
-    await sleep(30); 
-  }
-}
 export function calcCrc16ForOTA(data: Uint8Array): Uint8Array {
   let crc = 0xFFFF;
   for (let i = 0; i < data.length; i++) {
@@ -383,90 +312,19 @@ export function calcCrc16ForOTA(data: Uint8Array): Uint8Array {
       }
     }
   }
-  // Trả về mảng 2 byte: [Low Byte, High Byte]
   return new Uint8Array([crc & 0xFF, (crc >> 8) & 0xFF]);
 }
+
 export const reconnectHandle = async () => {
-  console.log("reconnect")
   const lastId = store?.state.hhu.idConnectLast;
-  const lastName = store?.state.hhu.nameConnectLast;
-
-  if (!lastId) {
-    Alert.alert("Thông báo", "Không tìm thấy thiết bị đã kết nối trước đó.");
-    return;
-  }
-
-  if (store.state.hhu.connect === "CONNECTING") return;
-
-  if (
-    store.state.hhu.connect === "CONNECTED" &&
-    store.state.hhu.idConnected === lastId
-  ) {
-    Alert.alert("Thông báo", `Đang kết nối với ${lastName || lastId}`);
-    return;
-  }
-
-  console.log(`🔄 Reconnect BLE: ${lastName} (${lastId})`);
+  if (!lastId) return;
 
   try {
-    // ===== set CONNECTING =====
-    store.setState(prev => ({
-      ...prev,
-      hhu: {
-        ...prev.hhu,
-        connect: "CONNECTING"
-      }
-    }));
-
-    // ===== connect BLE =====
+    store.setState(p => ({ ...p, hhu: { ...p.hhu, connect: "CONNECTING" } }));
     await BleManager.connect(lastId);
-
-    const res: any = await BleManager.retrieveServices(lastId);
-
-    const char = res.characteristics.find(
-      (c: any) => c.properties?.Write && c.properties?.Notify
-    );
-
-    if (!char) {
-      throw new Error("Không tìm thấy characteristic");
-    }
-
-    await BleManager.startNotification(
-      lastId,
-      char.service,
-      char.characteristic
-    );
-
-    console.log("✅ Reconnect thành công");
-
-    // ===== update state =====
-    store.setState(prev => ({
-      ...prev,
-      hhu: {
-        ...prev.hhu,
-        connect: "CONNECTED",
-        isConnected: true,
-        idConnected: lastId,
-        name: lastName,
-        serviceUUID: char.service,
-        characteristicUUID: char.characteristic
-      }
-    }));
-
+    await startNotification(lastId);
+    store.setState(p => ({ ...p, hhu: { ...p.hhu, connect: "CONNECTED", isConnected: true, idConnected: lastId } }));
   } catch (err) {
-    console.log("❌ Reconnect lỗi:", err);
-
-    store.setState(prev => ({
-      ...prev,
-      hhu: {
-        ...prev.hhu,
-        connect: "DISCONNECTED",
-        isConnected: false
-      }
-    }));
-
-    Alert.alert("Lỗi", "Không thể kết nối lại thiết bị.");
+    store.setState(p => ({ ...p, hhu: { ...p.hhu, connect: "DISCONNECTED", isConnected: false } }));
   }
 };
-
-

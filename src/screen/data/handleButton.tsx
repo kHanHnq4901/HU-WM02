@@ -1,17 +1,17 @@
-// handleButton.ts
 import { Alert } from 'react-native';
 import { buildEwmFrame, parseDecryptedPayload } from '../../util/EwmFrameBuilder';
-import { sendAndReceiveQueued, bytesToHex } from '../../util/ble';
-import { hookProps, store, getEventNameFromId } from './controller';
-import { sleep } from '../../util';
+import { sendAndReceiveQueued } from '../../util/ble';
+import { DataItem, hookProps, store } from './controller';
+
+// Module-level flag: reliable instant stop without depending on React state timing
+let _stopFlag = false;
 
 export const onReadData = async () => {
   const connectedId = store.state.hhu.idConnected;
   const { state, setState } = hookProps;
 
-  // ⛔ Nếu đang đọc → chuyển sang DỪNG
   if (state.isReading) {
-    setState(p => ({ ...p, stopRead: true }));
+    _stopFlag = true;
     return;
   }
 
@@ -20,8 +20,6 @@ export const onReadData = async () => {
     return;
   }
 
-  // 🔹 UI index (1-based)
-  // Giả sử dữ liệu cấu hình tối đa là 720 bản ghi
   const fromUI = parseInt(state.fromValue) || 1;
   const toUI   = parseInt(state.toValue)   || 720;
 
@@ -30,123 +28,65 @@ export const onReadData = async () => {
     return;
   }
 
-  // 🔥 Firmware index (0-based)
   const fromIndex = fromUI - 1;
-  const toIndex   = toUI   - 1;
+  const toIndex   = toUI - 1;
 
-  // 🚀 BẮT ĐẦU ĐỌC
-  setState(p => ({
-    ...p,
-    isReading: true,
-    stopRead: false,
-    dataList: [], // Clear mảng dataList thay vì eventList
-  }));
+  _stopFlag = false;
+  setState(p => ({ ...p, isReading: true, dataList: [] }));
 
   let rowNumber = 1;
+  let tempRows: DataItem[] = [];
   const u16LE = (v: number) => [v & 0xff, (v >> 8) & 0xff];
 
   try {
-    // 🔥 ĐỌC THEO BLOCK 5 DATA / FRAME
     for (let blockStart = fromIndex; blockStart <= toIndex; blockStart += 5) {
-      // 🛑 CHECK DỪNG
-      if (hookProps.state.stopRead) {
-        console.log('⛔ Người dùng dừng đọc Dữ liệu');
-        break;
-      }
+      if (_stopFlag) break;
 
       const blockEnd = Math.min(blockStart + 4, toIndex);
-      const payload = [
-        ...u16LE(blockStart),
-        ...u16LE(blockEnd),
-      ];
-
-      // Mã lệnh cho Data là 10 (Event là 11)
-      const frame = buildEwmFrame(10, payload);
-      
-      console.log(
-        `📤 Send Data (${blockStart + 1}-${blockEnd + 1})`
-      );
+      const frame = buildEwmFrame(10, [...u16LE(blockStart), ...u16LE(blockEnd)]);
 
       try {
         const recv = await sendAndReceiveQueued(connectedId, frame);
-        if (!recv?.length) {
-          await sleep(100);
-          continue;
-        }
+        if (!recv?.length) continue;
 
         const decryptedPayload = parseDecryptedPayload(new Uint8Array(recv));
         let index = 0;
-        const rows: any[] = [];
 
-        // 🔹 1 data = 2 byte index + 18 byte data = 20 byte
         while (index + 20 <= decryptedPayload.length) {
-          // Cắt lấy 18 byte dữ liệu, bỏ qua 2 byte index ban đầu
           const payloadData = decryptedPayload.slice(index + 2, index + 20);
           index += 20;
 
-          // Parse thời gian
-          const year = 2000 + payloadData[0];
-          const month = payloadData[1];
-          const day = payloadData[2];
-          const hour = payloadData[3];
-          const minute = payloadData[4];
-          const second = payloadData[5];
+          const y  = 2000 + payloadData[0];
+          const mo = payloadData[1].toString().padStart(2, '0');
+          const d  = payloadData[2].toString().padStart(2, '0');
+          const h  = payloadData[3].toString().padStart(2, '0');
+          const mi = payloadData[4].toString().padStart(2, '0');
+          const s  = payloadData[5].toString().padStart(2, '0');
 
-          const timeStr =
-            `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ` +
-            `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
-
-          // Đẩy vào mảng tạm
-          rows.push({
+          tempRows.push({
             id: rowNumber++,
-            time: timeStr,
+            time: `${y}-${mo}-${d} ${h}:${mi}:${s}`,
             forward: readUInt32LE(payloadData, 6),
             reverse: readUInt32LE(payloadData, 10),
             flow: readUInt32LE(payloadData, 14),
           });
         }
 
-        // ✅ setState 1 lần / block
-        if (rows.length) {
-          setState(p => ({
-            ...p,
-            dataList: [...p.dataList, ...rows],
-          }));
+        if (tempRows.length >= 30 || blockStart + 5 > toIndex) {
+          const batch = [...tempRows];
+          setState(p => ({ ...p, dataList: [...p.dataList, ...batch] }));
+          tempRows = [];
         }
-
-      } catch (err) {
-        console.log(`[Lỗi] Block ${blockStart + 1}-${blockEnd + 1}`, err);
+      } catch {
+        // skip failed block, keep reading
       }
-
-      await sleep(100);
     }
   } finally {
-    // 🧹 RESET TRẠNG THÁI
-    setState(p => ({
-      ...p,
-      isReading: false,
-      stopRead: false,
-    }));
-
-    console.log('✅ Kết thúc đọc Dữ liệu');
+    _stopFlag = false;
+    setState(p => ({ ...p, isReading: false }));
   }
 };
 
-// Hàm parse byte vẫn giữ nguyên
 export function readUInt32LE(bytes: Uint8Array, offset = 0): number {
-  return (
-    bytes[offset] |
-    (bytes[offset + 1] << 8) |
-    (bytes[offset + 2] << 16) |
-    (bytes[offset + 3] << 24)
-  ) >>> 0; 
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0; 
 }
-
-
-
-
-
-
-
-
-
